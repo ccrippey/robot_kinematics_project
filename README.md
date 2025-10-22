@@ -13,3 +13,10 @@ Install requirements
 ```
 pip install -r requirements.txt
 ```
+
+## Running the App
+
+To run the app:
+```
+python3 main.py
+```

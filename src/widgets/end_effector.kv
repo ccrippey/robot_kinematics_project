@@ -1,0 +1,7 @@
+<EndEffector>:
+    canvas:
+        Color:
+            rgba: self.color if hasattr(self, 'color') else (1, 1, 1, 1)
+        Ellipse:
+            pos: self.pos
+            size: 20, 20
