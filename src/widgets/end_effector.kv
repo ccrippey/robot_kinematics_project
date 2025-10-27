@@ -1,7 +1,24 @@
+#:kivy 2.3.1
 <EndEffector>:
-    canvas:
+    size_hint: None, None
+    size: 60, 50
+    orientation: 'vertical'
+    canvas.before:
         Color:
             rgba: self.color if hasattr(self, 'color') else (1, 1, 1, 1)
         Ellipse:
-            pos: self.pos
+            pos: self.x, self.y + self.children[1].height if self.children else self.y
             size: 20, 20
+    
+    Label:
+        size_hint: None, None
+        size: 60, 25
+        text: self.parent.position_text
+        font_size: '10sp'
+        color: (0, 0, 0, 1)
+        halign: 'center'
+        valign: 'middle'
+    
+    Widget:
+        size_hint: None, None
+        size: 20, 20
