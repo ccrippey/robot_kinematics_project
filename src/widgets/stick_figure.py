@@ -3,17 +3,19 @@ from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty
 from kivy.vector import Vector
 
 class StickFigure(Widget):
-    """A stick figure that receives end effector positions and calculates joint positions.
+    """A stick figure that receives end effector positions and calculates limb angles.
     
-    End effector positions:
+    End effector positions (inputs):
     - left_hand_x, left_hand_y
     - right_hand_x, right_hand_y
     - left_foot_x, left_foot_y
     - right_foot_x, right_foot_y
+    - shoulder_x, shoulder_y (now an input, not calculated)
+    - pelvis_x, pelvis_y (now an input, not calculated)
     
-    Calculated joint positions:
-    - shoulder_x, shoulder_y (midpoint between hands)
-    - pelvis_x, pelvis_y (midpoint between feet)
+    The inverse kinematics solver will calculate the individual limb angles (thetas)
+    to position the hands and feet at the specified locations given the shoulder
+    and pelvis positions.
     """
     
     # End effector positions (inputs)
@@ -26,11 +28,11 @@ class StickFigure(Widget):
     right_foot_x = NumericProperty(200)
     right_foot_y = NumericProperty(100)
     
-    # Calculated joint positions (outputs)
-    shoulder_x = NumericProperty(0)
-    shoulder_y = NumericProperty(0)
-    pelvis_x = NumericProperty(0)
-    pelvis_y = NumericProperty(0)
+    # Joint positions (now driven by end effectors, not calculated)
+    shoulder_x = NumericProperty(150)
+    shoulder_y = NumericProperty(280)
+    pelvis_x = NumericProperty(150)
+    pelvis_y = NumericProperty(130)
     
     head_image = StringProperty("assets/He watches.png")
     
@@ -45,24 +47,29 @@ class StickFigure(Widget):
                   left_foot_x=self.inverse_kinematics_update,
                   left_foot_y=self.inverse_kinematics_update,
                   right_foot_x=self.inverse_kinematics_update,
-                  right_foot_y=self.inverse_kinematics_update)
+                  right_foot_y=self.inverse_kinematics_update,
+                  shoulder_x=self.inverse_kinematics_update,
+                  shoulder_y=self.inverse_kinematics_update,
+                  pelvis_x=self.inverse_kinematics_update,
+                  pelvis_y=self.inverse_kinematics_update)
         
         # Initial calculation
         self.inverse_kinematics_update()
     
     def inverse_kinematics_update(self, *args):
-        """Calculate joint positions from end effector positions.
+        """Calculate limb angles from end effector and joint positions.
         
-        Currently implements a simple test: 
-        - Shoulder position = midpoint between hands
-        - Pelvis position = midpoint between feet
+        Now that shoulder and pelvis positions are driven by end effectors,
+        this function will eventually calculate the individual link thetas
+        to reach the hand and foot positions.
         
-        TODO: Implement proper inverse kinematics solver
+        TODO: Implement proper inverse kinematics solver for limb angles
+        Currently just uses the effector positions directly.
         """
-        # Calculate shoulder as midpoint between hands
-        self.shoulder_x = (self.left_hand_x + self.right_hand_x) / 2
-        self.shoulder_y = (self.left_hand_y + self.right_hand_y) / 2
-        
-        # Calculate pelvis as midpoint between feet
-        self.pelvis_x = (self.left_foot_x + self.right_foot_x) / 2
-        self.pelvis_y = (self.left_foot_y + self.right_foot_y) / 2
+        # Shoulder and pelvis are now driven directly by end effectors
+        # TODO: Calculate limb thetas based on:
+        #   - shoulder_x/y and left_hand_x/y -> left arm thetas
+        #   - shoulder_x/y and right_hand_x/y -> right arm thetas  
+        #   - pelvis_x/y and left_foot_x/y -> left leg thetas
+        #   - pelvis_x/y and right_foot_x/y -> right leg thetas
+        pass

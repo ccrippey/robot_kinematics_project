@@ -7,7 +7,7 @@ from kivy.uix.screenmanager import ScreenManager
 import os
 
 # Import your screen logic
-from src.screens.screens import Figure2D
+from src.screens.figure2d import Figure2D
 from src import widgets
 from kivy.core.window import Window
 
