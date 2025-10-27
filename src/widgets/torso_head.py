@@ -16,6 +16,7 @@ class TorsoHead(Widget):
     pelvis_x = NumericProperty(0)
     pelvis_y = NumericProperty(0)
     head_image = StringProperty("")
+    head_size = NumericProperty(75)
     
     def __init__(self, **kwargs):
         super(TorsoHead, self).__init__(**kwargs)
@@ -50,20 +51,19 @@ class TorsoHead(Widget):
         dy = self.pelvis_y - self.shoulder_y
         
         if dx != 0 or dy != 0:
-            torso_angle = math.degrees(math.atan2(dy, dx))
+            torso_angle = math.atan2(dy, dx)
         else:
-            torso_angle = -90  # Default to vertical
+            torso_angle = -math.pi / 2  # Default to vertical
         
         # Head offset distance above shoulders (perpendicular to torso)
-        head_offset = 40
+        head_offset = self.head_size // 2
         
-        # Calculate perpendicular direction (90 degrees from torso)
-        perp_angle = torso_angle - 90
-        perp_rad = math.radians(perp_angle)
+        # Calculate perpendicular direction (180 degrees from torso)
+        perp_angle = torso_angle - math.pi
         
         # Position head offset from shoulders in perpendicular direction
-        head_x = self.shoulder_x + head_offset * math.cos(perp_rad)
-        head_y = self.shoulder_y + head_offset * math.sin(perp_rad)
+        head_x = self.shoulder_x + head_offset * math.cos(perp_angle)
+        head_y = self.shoulder_y + head_offset * math.sin(perp_angle)
         
         # Update head widget if it exists (defined in .kv file as id: head_widget)
         if hasattr(self, 'ids') and hasattr(self.ids, 'head_widget'):

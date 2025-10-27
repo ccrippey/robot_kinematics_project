@@ -1,5 +1,5 @@
 from kivy.uix.image import Image
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, NumericProperty
 
 
 class Head(Image):
@@ -10,6 +10,7 @@ class Head(Image):
     """
     
     head_image = StringProperty("")  # Path to the head image file
+    head_size = NumericProperty(75)  # Size of the head image
     
     def __init__(self, **kwargs):
         super(Head, self).__init__(**kwargs)
