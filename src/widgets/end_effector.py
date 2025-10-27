@@ -3,7 +3,7 @@ from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty
 from kivy.vector import Vector
 
 class EndEffector(Widget):
-    velocity_x = NumericProperty(0)
+    velocity_x = NumericProperty(0.1)
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
 
