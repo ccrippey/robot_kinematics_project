@@ -1,19 +1,28 @@
 #:kivy 2.3.1
 
 <Figure2D>:
-
+    # End effectors for hands
     EndEffector:
         id: hand_left
-        pos: 100, 100
-        velocity: 2, 0
+        pos: 100, 300
         color: (0, 1, 0, 1)
     
     EndEffector:
         id: hand_right
-        pos: 50, 50
-        velocity: 2, 0
+        pos: 200, 300
         color: (1, 0, 0, 1)
+    
+    # End effectors for feet
+    EndEffector:
+        id: foot_left
+        pos: 100, 100
+        color: (0, 0, 1, 1)
+    
+    EndEffector:
+        id: foot_right
+        pos: 200, 100
+        color: (1, 1, 0, 1)
     
     StickFigure:
         id: sticky1
-    
+
