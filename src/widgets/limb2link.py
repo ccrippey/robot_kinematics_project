@@ -30,4 +30,4 @@ class Limb2Link(Widget):
 
     def _update_line(self, *args):
 
-        self.line.points = fk.forward_kinematics_2D_2link(self.a1, self.a2, self.theta, self.origin_x, self.origin_y, self.theta_origin)
+        self.line.points = fk.forward_kinematics_2D_2link(self.a1, self.a2, self.origin_x, self.origin_y, self.theta_origin,  self.theta)
