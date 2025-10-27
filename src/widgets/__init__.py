@@ -3,7 +3,7 @@ from kivy.lang import Builder
 from kivy.factory import Factory
 from .end_effector import EndEffector
 from .limb import Limb
-from .skick_figure import StickFigure
+from .stick_figure import StickFigure
 from .limb2joint import Limb2Link
 
 # Register the Python class with the Factory
