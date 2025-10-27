@@ -18,8 +18,8 @@ class EndEffector(DragBehavior, BoxLayout):
     def __init__(self, **kwargs):
         super(EndEffector, self).__init__(**kwargs)
         # Configure drag behavior to allow dragging from anywhere on the widget
-        self.drag_rectangle = self.x, self.y, self.width, self.height
-        self.drag_distance = 5  # Start dragging immediately
+        self._update_drag_rect()
+        self.drag_distance = 5
         
         # Update drag rectangle when position or size changes
         self.bind(pos=self._update_drag_rect, size=self._update_drag_rect)
@@ -31,7 +31,7 @@ class EndEffector(DragBehavior, BoxLayout):
     
     def _update_position_text(self, *args):
         """Update the position text label when the widget moves."""
-        self.position_text = f"{int(self.pos[0])}, {int(self.pos[1])}"
+        self.position_text = f"{int(self.center_x)}, {int(self.center_y)}"
         
     def set_color(self, rgba):
         """Set the color of the end effector handle."""

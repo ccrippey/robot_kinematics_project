@@ -1,13 +1,13 @@
 #:kivy 2.3.1
 <EndEffector>:
     size_hint: None, None
-    size: 60, 50
+    size: 20, 20
     orientation: 'vertical'
     canvas.before:
         Color:
             rgba: self.color if hasattr(self, 'color') else (1, 1, 1, 1)
         Ellipse:
-            pos: self.x, self.y + self.children[1].height if self.children else self.y
+            pos: self.x, self.y
             size: 20, 20
     
     Label:
