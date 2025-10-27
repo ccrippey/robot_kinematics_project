@@ -19,7 +19,7 @@ class EndEffector(DragBehavior, BoxLayout):
         super(EndEffector, self).__init__(**kwargs)
         # Configure drag behavior to allow dragging from anywhere on the widget
         self.drag_rectangle = self.x, self.y, self.width, self.height
-        self.drag_distance = 0  # Start dragging immediately
+        self.drag_distance = 5  # Start dragging immediately
         
         # Update drag rectangle when position or size changes
         self.bind(pos=self._update_drag_rect, size=self._update_drag_rect)
