@@ -1,6 +1,8 @@
 
 from kivy.lang import Builder
 from kivy.factory import Factory
+
+from .head import Head
 from .end_effector import EndEffector
 from .limb import Limb
 from .stick_figure import StickFigure
@@ -11,6 +13,7 @@ Factory.register('EndEffector', cls=EndEffector)
 Factory.register('Limb', cls=Limb)
 Factory.register('StickFigure', cls=StickFigure)
 Factory.register('Limb2Link', cls=Limb2Link)
+Factory.register('Head', cls=Head)
 
 # Load the associated kv file automatically
 Builder.load_file(__file__.replace('__init__.py', 'end_effector.kv'))

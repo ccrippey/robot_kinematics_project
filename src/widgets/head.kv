@@ -1,0 +1,12 @@
+#:kivy 2.3.1
+<Head>:
+    size_hint: None, None
+    size: 30, 30
+    allow_stretch: True
+    keep_ratio: True
+    canvas.before:
+        Color:
+            rgba: 0.8, 0.8, 0.8, 1
+        Ellipse:
+            pos: self.pos
+            size: self.size
