@@ -1,6 +1,7 @@
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty, StringProperty
 from kivy.vector import Vector
+from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link
 
 class StickFigure(Widget):
     """A stick figure that receives end effector positions and calculates limb angles.
@@ -57,6 +58,8 @@ class StickFigure(Widget):
         self.inverse_kinematics_update()
     
     def inverse_kinematics_update(self, *args):
+        #Template for calling IK
+        #(left_arm_theta1, left_arm_theta2) = inverse_kinematics_2D_2link(<left_arm_bicep_length>, <left_arm_forearm_length>, <shoulder_x>, self.shoulder_x, self.shoulder_y, self.left_hand_x, self.left_hand_y)
         """Calculate limb angles from end effector and joint positions.
         
         Now that shoulder and pelvis positions are driven by end effectors,
