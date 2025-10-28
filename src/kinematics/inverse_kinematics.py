@@ -9,8 +9,11 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
     r_p = math.sqrt(Px**2 + Py**2)
     r_lim = math.sqrt(a1**2 + a2**2)
 
-    if (r_p >= r_lim - 1e-6):
+    if (r_p >= r_lim - 1e-9):
         theta2 = 0
+        theta1 = math.atan2(Py,Px)
+    elif (Px**2 + Py**2) - (a1 - a2)**2 <- 1e-3:
+        theta2 = math.pi
         theta1 = math.atan2(Py,Px)
     else:
         theta2 = 2*math.atan(math.sqrt( ((a1 + a2)**2 - (Px**2 + Py**2))/( (Px**2 + Py**2) - (a1 - a2)**2 ) ))
