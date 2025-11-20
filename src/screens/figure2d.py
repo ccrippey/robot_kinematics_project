@@ -1,8 +1,10 @@
 from kivy.clock import Clock
+from kivy.properties import NumericProperty
 from kivy.uix.screenmanager import Screen
 
 
 class Figure2D(Screen):
+    projection_mode = NumericProperty(0)
     PELVIS_FOLLOW_FACTOR = 0.35
 
     def __init__(self, **kwargs):
@@ -22,54 +24,45 @@ class Figure2D(Screen):
         """Bind the end effector positions to the stick figure's IK system."""
         if hasattr(self.ids, 'sticky1'):
             stick = self.ids.sticky1
+            stick.projection_mode = self.projection_mode
+            self.bind(projection_mode=lambda inst, val: setattr(stick, 'projection_mode', val))
             
             # Bind hand positions
             if hasattr(self.ids, 'hand_left'):
-                self.ids.hand_left.bind(center_x=lambda inst, val: setattr(stick, 'left_hand_x', val))
-                self.ids.hand_left.bind(center_y=lambda inst, val: setattr(stick, 'left_hand_y', val))
-                # Set initial position
-                stick.left_hand_x = self.ids.hand_left.center_x
-                stick.left_hand_y = self.ids.hand_left.center_y
+                self._bind_effector_3d(self.ids.hand_left, stick, 'left_hand')
             
             if hasattr(self.ids, 'hand_right'):
-                self.ids.hand_right.bind(center_x=lambda inst, val: setattr(stick, 'right_hand_x', val))
-                self.ids.hand_right.bind(center_y=lambda inst, val: setattr(stick, 'right_hand_y', val))
-                # Set initial position
-                stick.right_hand_x = self.ids.hand_right.center_x
-                stick.right_hand_y = self.ids.hand_right.center_y
+                self._bind_effector_3d(self.ids.hand_right, stick, 'right_hand')
             
             # Bind foot positions
             if hasattr(self.ids, 'foot_left'):
-                self.ids.foot_left.bind(center_x=lambda inst, val: setattr(stick, 'left_foot_x', val))
-                self.ids.foot_left.bind(center_y=lambda inst, val: setattr(stick, 'left_foot_y', val))
-                # Set initial position
-                stick.left_foot_x = self.ids.foot_left.center_x
-                stick.left_foot_y = self.ids.foot_left.center_y
+                self._bind_effector_3d(self.ids.foot_left, stick, 'left_foot')
             
             if hasattr(self.ids, 'foot_right'):
-                self.ids.foot_right.bind(center_x=lambda inst, val: setattr(stick, 'right_foot_x', val))
-                self.ids.foot_right.bind(center_y=lambda inst, val: setattr(stick, 'right_foot_y', val))
-                # Set initial position
-                stick.right_foot_x = self.ids.foot_right.center_x
-                stick.right_foot_y = self.ids.foot_right.center_y
+                self._bind_effector_3d(self.ids.foot_right, stick, 'right_foot')
             
             # Bind shoulder position
             if hasattr(self.ids, 'shoulder'):
-                self.ids.shoulder.bind(center_x=lambda inst, val: setattr(stick, 'shoulder_x', val))
-                self.ids.shoulder.bind(center_y=lambda inst, val: setattr(stick, 'shoulder_y', val))
-                # Set initial position
-                stick.shoulder_x = self.ids.shoulder.center_x
-                stick.shoulder_y = self.ids.shoulder.center_y
+                self._bind_effector_3d(self.ids.shoulder, stick, 'shoulder')
             
             # Bind pelvis position
             if hasattr(self.ids, 'pelvis'):
-                self.ids.pelvis.bind(center_x=lambda inst, val: setattr(stick, 'pelvis_x', val))
-                self.ids.pelvis.bind(center_y=lambda inst, val: setattr(stick, 'pelvis_y', val))
-                # Set initial position
-                stick.pelvis_x = self.ids.pelvis.center_x
-                stick.pelvis_y = self.ids.pelvis.center_y
+                self._bind_effector_3d(self.ids.pelvis, stick, 'pelvis')
+
+            self._apply_projection_mode_to_effectors()
 
             self._initialize_motion_propagation()
+
+    def _bind_effector_3d(self, eff, stick, limb_name):
+        x_attr = f"{limb_name}_x3"
+        y_attr = f"{limb_name}_y3"
+        z_attr = f"{limb_name}_z3"
+        eff.bind(x3=lambda inst, val, attr=x_attr: setattr(stick, attr, val))
+        eff.bind(y3=lambda inst, val, attr=y_attr: setattr(stick, attr, val))
+        eff.bind(z3=lambda inst, val, attr=z_attr: setattr(stick, attr, val))
+        setattr(stick, x_attr, eff.x3)
+        setattr(stick, y_attr, eff.y3)
+        setattr(stick, z_attr, eff.z3)
 
     def _initialize_motion_propagation(self):
         """Capture the initial layout and hook propagation callbacks."""
@@ -86,6 +79,13 @@ class Figure2D(Screen):
             )
 
         self._setup_propagation_bindings()
+
+    def _apply_projection_mode_to_effectors(self):
+        for eff_id in ('hand_left', 'hand_right', 'foot_left', 'foot_right', 'shoulder', 'pelvis'):
+            if hasattr(self.ids, eff_id):
+                eff = getattr(self.ids, eff_id)
+                eff.projection_mode = self.projection_mode
+                self.bind(projection_mode=lambda inst, val, e=eff: setattr(e, 'projection_mode', val))
 
     def _setup_propagation_bindings(self):
         for eff_id in ('foot_left', 'foot_right'):

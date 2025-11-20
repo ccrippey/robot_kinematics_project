@@ -11,7 +11,7 @@
             padding: 10    
             spacing: 10      
             size_hint_y: None
-            height: top_bar1.height + top_bar2.height + 20  
+            height: top_bar1.height + top_bar2.height + top_bar3.height + 30  
 
             BoxLayout:
                 id: top_bar1
@@ -53,6 +53,23 @@
                     text: '>>'
                     on_release: root.next_frame()
 
+            BoxLayout:
+                id: top_bar3
+                size_hint_y: None
+                height: '42dp'
+                spacing: 10
+                Label:
+                    text: 'Viewing Angle:'
+                    color: 0,0,0,1
+                    size_hint_x: None
+                    width: '100dp'
+                Spinner:
+                    text: str(root.projection_mode)
+                    values: ["-90", "-45","0", "45", "90"]
+                    size_hint_x: None
+                    width: '140dp'
+                    on_text: root.projection_mode = float(self.text)
+
         RelativeLayout:
             id: canvas_area
             canvas.before:
@@ -75,31 +92,37 @@
                     pos: 100, 300
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
                 EndEffector:
                     id: ghost_hand_right
                     pos: 200, 300
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
                 EndEffector:
                     id: ghost_foot_left
                     pos: 100, 100
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
                 EndEffector:
                     id: ghost_foot_right
                     pos: 200, 100
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
                 EndEffector:
                     id: ghost_shoulder
                     pos: 150, 280
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
                 EndEffector:
                     id: ghost_pelvis
                     pos: 150, 130
                     color: (0.6, 0.6, 0.6, 0.6)
                     draggable: False
+                    projection_mode: root.projection_mode
 
             StickFigure:
                 id: stick_current
@@ -110,23 +133,29 @@
                 id: curr_hand_left
                 pos: 100, 300
                 color: (0, 1, 0, 1)
+                projection_mode: root.projection_mode
             EndEffector:
                 id: curr_hand_right
                 pos: 200, 300
                 color: (1, 0, 0, 1)
+                projection_mode: root.projection_mode
             EndEffector:
                 id: curr_foot_left
                 pos: 100, 100
                 color: (0, 0, 1, 1)
+                projection_mode: root.projection_mode
             EndEffector:
                 id: curr_foot_right
                 pos: 200, 100
                 color: (1, 1, 0, 1)
+                projection_mode: root.projection_mode
             EndEffector:
                 id: curr_shoulder
                 pos: 150, 280
                 color: (1, 0, 1, 1)
+                projection_mode: root.projection_mode
             EndEffector:
                 id: curr_pelvis
                 pos: 150, 130
                 color: (0, 1, 1, 1)
+                projection_mode: root.projection_mode

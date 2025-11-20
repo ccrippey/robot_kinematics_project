@@ -1,7 +1,9 @@
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty, StringProperty
 from kivy.vector import Vector
+from kivy.core.window import Window
 from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link
+from src.kinematics import projection2d
 
 
 class StickFigure(Widget):
@@ -20,7 +22,21 @@ class StickFigure(Widget):
     and pelvis positions.
     """
 
-    # End effector positions (inputs)
+    # End effector positions (inputs) - 3D source of truth
+    left_hand_x3 = NumericProperty(100)
+    left_hand_y3 = NumericProperty(300)
+    left_hand_z3 = NumericProperty(0)
+    right_hand_x3 = NumericProperty(200)
+    right_hand_y3 = NumericProperty(300)
+    right_hand_z3 = NumericProperty(0)
+    left_foot_x3 = NumericProperty(100)
+    left_foot_y3 = NumericProperty(100)
+    left_foot_z3 = NumericProperty(0)
+    right_foot_x3 = NumericProperty(200)
+    right_foot_y3 = NumericProperty(100)
+    right_foot_z3 = NumericProperty(0)
+
+    # 2D projected coordinates used for rendering/IK
     left_hand_x = NumericProperty(100)
     left_hand_y = NumericProperty(300)
     right_hand_x = NumericProperty(200)
@@ -30,18 +46,51 @@ class StickFigure(Widget):
     right_foot_x = NumericProperty(200)
     right_foot_y = NumericProperty(100)
 
-    # Joint positions (now driven by end effectors, not calculated)
+    # Joint positions (3D source of truth)
+    shoulder_x3 = NumericProperty(150)
+    shoulder_y3 = NumericProperty(280)
+    shoulder_z3 = NumericProperty(0)
+    pelvis_x3 = NumericProperty(150)
+    pelvis_y3 = NumericProperty(130)
+    pelvis_z3 = NumericProperty(0)
+
+    # Projected 2D shoulder/pelvis
     shoulder_x = NumericProperty(150)
     shoulder_y = NumericProperty(280)
     pelvis_x = NumericProperty(150)
     pelvis_y = NumericProperty(130)
+
+    # Projection mode
+    projection_mode = NumericProperty(0.0)
 
     head_image = StringProperty("assets/He watches.png")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # Bind end effector positions to inverse kinematics update
+        # Bind projection changes from 3D -> 2D, then IK update
+        self.bind(
+            # projection_mode=self._update_projection_2d,
+            left_hand_x3=self._update_projection_2d,
+            left_hand_y3=self._update_projection_2d,
+            left_hand_z3=self._update_projection_2d,
+            right_hand_x3=self._update_projection_2d,
+            right_hand_y3=self._update_projection_2d,
+            right_hand_z3=self._update_projection_2d,
+            left_foot_x3=self._update_projection_2d,
+            left_foot_y3=self._update_projection_2d,
+            left_foot_z3=self._update_projection_2d,
+            right_foot_x3=self._update_projection_2d,
+            right_foot_y3=self._update_projection_2d,
+            right_foot_z3=self._update_projection_2d,
+            shoulder_x3=self._update_projection_2d,
+            shoulder_y3=self._update_projection_2d,
+            shoulder_z3=self._update_projection_2d,
+            pelvis_x3=self._update_projection_2d,
+            pelvis_y3=self._update_projection_2d,
+            pelvis_z3=self._update_projection_2d,
+        )
+
         self.bind(
             left_hand_x=self.inverse_kinematics_update,
             left_hand_y=self.inverse_kinematics_update,
@@ -57,8 +106,30 @@ class StickFigure(Widget):
             pelvis_y=self.inverse_kinematics_update,
         )
 
-        # Initial calculation
+        # Initial projection + IK
+        self._update_projection_2d()
         self.inverse_kinematics_update()
+
+    def _update_projection_2d(self, *args):
+        """Project stored 3D joint locations into 2D display coordinates."""
+        self.left_hand_x, self.left_hand_y = projection2d.project_point(
+            (self.left_hand_x3, self.left_hand_y3, self.left_hand_z3), self.projection_mode, (Window.width, Window.height)
+        )
+        self.right_hand_x, self.right_hand_y = projection2d.project_point(
+            (self.right_hand_x3, self.right_hand_y3, self.right_hand_z3), self.projection_mode, (Window.width, Window.height)
+        )
+        self.left_foot_x, self.left_foot_y = projection2d.project_point(
+            (self.left_foot_x3, self.left_foot_y3, self.left_foot_z3), self.projection_mode, (Window.width, Window.height)
+        )
+        self.right_foot_x, self.right_foot_y = projection2d.project_point(
+            (self.right_foot_x3, self.right_foot_y3, self.right_foot_z3), self.projection_mode, (Window.width, Window.height)
+        )
+        self.shoulder_x, self.shoulder_y = projection2d.project_point(
+            (self.shoulder_x3, self.shoulder_y3, self.shoulder_z3), self.projection_mode, (Window.width, Window.height)
+        )
+        self.pelvis_x, self.pelvis_y = projection2d.project_point(
+            (self.pelvis_x3, self.pelvis_y3, self.pelvis_z3), self.projection_mode, (Window.width, Window.height)
+        )
 
     def inverse_kinematics_update(self, *args):
         if not {"left_arm", "right_arm", "left_leg", "right_leg"}.issubset(self.ids):
