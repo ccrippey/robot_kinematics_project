@@ -1,0 +1,26 @@
+<HomeScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 20
+        padding: 40
+        Label:
+            color: 0, 0, 0
+            text: "Stick Figure Animator"
+            font_size: 32
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: 20
+            padding: 40
+            Button:
+                text: "Keyframe Editor"
+                font_size: 24
+                on_release: app.root.current = 'settings'
+            Button:
+                text: "Animation Playback"
+                font_size: 24
+                on_release: app.root.current = 'settings'
+            Button:
+                text: "Free Editor"
+                background_color: 1, 0, 0
+                font_size: 24
+                on_release: app.root.current = 'figure2d'
