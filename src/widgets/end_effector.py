@@ -2,7 +2,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.behaviors import DragBehavior
-from kivy.properties import ListProperty, StringProperty
+from kivy.properties import ListProperty, StringProperty, BooleanProperty
 
 class EndEffector(DragBehavior, BoxLayout):
     """A draggable circular handle widget with a position display label.
@@ -14,6 +14,7 @@ class EndEffector(DragBehavior, BoxLayout):
     
     color = ListProperty([1, 0, 0, 1])  # Default color (red)
     position_text = StringProperty("0, 0")  # Text displaying current position
+    draggable = BooleanProperty(True)
     
     def __init__(self, **kwargs):
         super(EndEffector, self).__init__(**kwargs)
@@ -36,3 +37,18 @@ class EndEffector(DragBehavior, BoxLayout):
     def set_color(self, rgba):
         """Set the color of the end effector handle."""
         self.color = rgba
+
+    def on_touch_down(self, touch):
+        if not self.draggable:
+            return super(DragBehavior, self).on_touch_down(touch)
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if not self.draggable:
+            return super(DragBehavior, self).on_touch_move(touch)
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if not self.draggable:
+            return super(DragBehavior, self).on_touch_up(touch)
+        return super().on_touch_up(touch)

@@ -8,7 +8,8 @@ import os
 
 # Import your screen logic
 from src.screens.figure2d import Figure2D
-from src.screens.screens import HomeScreen
+from src.screens.keyframes import KeyframeEditor
+from src.screens.screens import HomeScreen, AnimationScreen
 from src import widgets
 from kivy.core.window import Window
 
@@ -26,6 +27,8 @@ class MyApp(App):
         # Explicitly load all kv files
         Builder.load_file(os.path.join(kv_dir, 'figure2d.kv'))
         Builder.load_file(os.path.join(kv_dir, 'home.kv'))
+        Builder.load_file(os.path.join(kv_dir, 'keyframes.kv'))
+        Builder.load_file(os.path.join(kv_dir, 'animation.kv'))
 
         # Load the root kv (optional)
         Builder.load_file(os.path.join(base_dir, 'src', 'app.kv'))
@@ -33,6 +36,8 @@ class MyApp(App):
         sm = AppScreenManager()
         sm.add_widget(Figure2D(name='figure2d'))
         sm.add_widget(HomeScreen(name='home'))
+        sm.add_widget(KeyframeEditor(name='keyframes'))
+        sm.add_widget(AnimationScreen(name='animation'))
         sm.current = 'home'
         return sm
 

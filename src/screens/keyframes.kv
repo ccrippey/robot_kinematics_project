@@ -1,0 +1,132 @@
+#:kivy 2.3.1
+
+<KeyframeEditor>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 0
+        spacing: 0
+
+        BoxLayout:
+            orientation: 'vertical'
+            padding: 10    
+            spacing: 10      
+            size_hint_y: None
+            height: top_bar1.height + top_bar2.height + 20  
+
+            BoxLayout:
+                id: top_bar1
+                size_hint_y: None
+                height: '48dp'
+                spacing: 10
+                Button:
+                    text: 'Home'
+                    on_release: root.go_home()
+                Button:
+                    text: 'Animation Play'
+                    on_release: root.go_animation()
+                Button:
+                    text: 'Clear All Frames'
+                    on_release: root.clear_frames()
+
+            BoxLayout:
+                id: top_bar2
+                size_hint_y: None
+                height: '48dp'
+                spacing: 10
+                Label:
+                    text: root.frame_label
+                    color: 0, 0, 0, 1
+                Button:
+                    text: '+ keyframe'
+                    on_release: root.add_keyframe()
+                Button:
+                    text: '<<'
+                    on_release: root.prev_frame()
+                Spinner:
+                    id: frame_spinner
+                    size_hint_x: None
+                    width: '120dp'
+                    text: str(root.current_index + 1)
+                    values: root.frame_choices
+                    on_text: root.on_frame_chosen(self.text)
+                Button:
+                    text: '>>'
+                    on_release: root.next_frame()
+
+        RelativeLayout:
+            id: canvas_area
+            canvas.before:
+                Color:
+                    rgba: 0.95, 0.95, 0.97, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            FloatLayout:
+                id: ghost_layer
+                opacity: 0
+                StickFigure:
+                    id: ghost_stick
+                    size_hint: 1, 1
+                    pos: 0, 0
+                    opacity: 0.6
+                EndEffector:
+                    id: ghost_hand_left
+                    pos: 100, 300
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+                EndEffector:
+                    id: ghost_hand_right
+                    pos: 200, 300
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+                EndEffector:
+                    id: ghost_foot_left
+                    pos: 100, 100
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+                EndEffector:
+                    id: ghost_foot_right
+                    pos: 200, 100
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+                EndEffector:
+                    id: ghost_shoulder
+                    pos: 150, 280
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+                EndEffector:
+                    id: ghost_pelvis
+                    pos: 150, 130
+                    color: (0.6, 0.6, 0.6, 0.6)
+                    draggable: False
+
+            StickFigure:
+                id: stick_current
+                size_hint: 1, 1
+                pos: 0, 0
+
+            EndEffector:
+                id: curr_hand_left
+                pos: 100, 300
+                color: (0, 1, 0, 1)
+            EndEffector:
+                id: curr_hand_right
+                pos: 200, 300
+                color: (1, 0, 0, 1)
+            EndEffector:
+                id: curr_foot_left
+                pos: 100, 100
+                color: (0, 0, 1, 1)
+            EndEffector:
+                id: curr_foot_right
+                pos: 200, 100
+                color: (1, 1, 0, 1)
+            EndEffector:
+                id: curr_shoulder
+                pos: 150, 280
+                color: (1, 0, 1, 1)
+            EndEffector:
+                id: curr_pelvis
+                pos: 150, 130
+                color: (0, 1, 1, 1)

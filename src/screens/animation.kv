@@ -1,0 +1,16 @@
+#:kivy 2.3.1
+
+<AnimationScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 40
+        spacing: 20
+        Label:
+            text: 'TODO Add animations'
+            color: 0, 0, 0, 1
+            font_size: 28
+        Button:
+            text: 'Back to Home'
+            size_hint_y: None
+            height: '48dp'
+            on_release: app.root.current = 'home'
