@@ -70,7 +70,7 @@ class StickFigure(Widget):
 
         # Bind projection changes from 3D -> 2D, then IK update
         self.bind(
-            # projection_mode=self._update_projection_2d,
+            projection_mode=self._update_projection_2d,
             left_hand_x3=self._update_projection_2d,
             left_hand_y3=self._update_projection_2d,
             left_hand_z3=self._update_projection_2d,
@@ -112,22 +112,22 @@ class StickFigure(Widget):
 
     def _update_projection_2d(self, *args):
         """Project stored 3D joint locations into 2D display coordinates."""
-        self.left_hand_x, self.left_hand_y = projection2d.project_point(
+        self.left_hand_x, self.left_hand_y, _ = projection2d.project_point(
             (self.left_hand_x3, self.left_hand_y3, self.left_hand_z3), self.projection_mode, (Window.width, Window.height)
         )
-        self.right_hand_x, self.right_hand_y = projection2d.project_point(
+        self.right_hand_x, self.right_hand_y, _ = projection2d.project_point(
             (self.right_hand_x3, self.right_hand_y3, self.right_hand_z3), self.projection_mode, (Window.width, Window.height)
         )
-        self.left_foot_x, self.left_foot_y = projection2d.project_point(
+        self.left_foot_x, self.left_foot_y, _ = projection2d.project_point(
             (self.left_foot_x3, self.left_foot_y3, self.left_foot_z3), self.projection_mode, (Window.width, Window.height)
         )
-        self.right_foot_x, self.right_foot_y = projection2d.project_point(
+        self.right_foot_x, self.right_foot_y, _ = projection2d.project_point(
             (self.right_foot_x3, self.right_foot_y3, self.right_foot_z3), self.projection_mode, (Window.width, Window.height)
         )
-        self.shoulder_x, self.shoulder_y = projection2d.project_point(
+        self.shoulder_x, self.shoulder_y, _ = projection2d.project_point(
             (self.shoulder_x3, self.shoulder_y3, self.shoulder_z3), self.projection_mode, (Window.width, Window.height)
         )
-        self.pelvis_x, self.pelvis_y = projection2d.project_point(
+        self.pelvis_x, self.pelvis_y, _ = projection2d.project_point(
             (self.pelvis_x3, self.pelvis_y3, self.pelvis_z3), self.projection_mode, (Window.width, Window.height)
         )
 

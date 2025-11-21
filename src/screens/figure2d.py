@@ -145,7 +145,6 @@ class Figure2D(Screen):
         foot_mid = self._current_foot_midpoint()
         if foot_mid:
             self._pelvis_offset_from_feet = (new_center[0] - foot_mid[0], new_center[1] - foot_mid[1])
-
         self._move_shoulders_by(delta)
 
     def _set_pelvis_center(self, new_x, new_y, update_offset):

@@ -3,30 +3,27 @@ import math
 import numpy as np
 
 def project_point(point3d: Tuple[float, float, float], z_rotation: float, center) -> Tuple[float, float]:
-    x, y, z = point3d
-    # print(point3d)
 
-    e1 = [math.cos(math.radians(z_rotation)), -math.sin(math.radians(z_rotation)), 0]
-    e2 = [math.sin(math.radians(z_rotation)), math.cos(math.radians(z_rotation)), 0]
-    E = np.array([e1, e2])
+    E = np.array([[math.cos(math.radians(z_rotation)), 0, math.sin(math.radians(z_rotation))],
+                  [0, 1, 0],
+                  [-math.sin(math.radians(z_rotation)), 0, math.cos(math.radians(z_rotation))]])
     # print(E)
-    origin = [center[0]/2, center[1]/2, 0]
     point2d = E @ (np.array(point3d))
-    # print(point2d)
 
-    return center[0]*float(point2d[0])+center[0]/2, center[1]*float(point2d[1])+center[1]/2
+    return center[0]*float(point2d[0])+center[0]/2, center[1]*float(point2d[1])+center[1]/2, float(point2d[2])
 
 
 def back_project(point2d: Tuple[float, float], z_rotation: float = 0.0, depth: float = 0.0, window=(0,0)) -> Tuple[float, float, float]:
     e1 = [math.cos(math.radians(z_rotation)), -math.sin(math.radians(z_rotation)), 0]
     e2 = [math.sin(math.radians(z_rotation)), math.cos(math.radians(z_rotation)), 0]
     e3 = [0, 0, 1]
-    E = np.array([e1, e2, e3])
+    E = np.array([[math.cos(math.radians(z_rotation)), 0, math.sin(math.radians(z_rotation))],
+                  [0, 1, 0],
+                  [-math.sin(math.radians(z_rotation)), 0, math.cos(math.radians(z_rotation))]])
     point2d_scaled = [(point2d[0]-window[0]/2)/window[0], (point2d[1]-window[1]/2)/window[1]]
     point2d_augmented = [point2d_scaled[0], point2d_scaled[1], depth]
     point3 = E.T @ np.array(point2d_augmented)
 
-    # print(point3)
     return float(point3[0]), float(point3[1]), float(point3[2])
 
 

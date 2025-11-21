@@ -24,6 +24,7 @@ class EndEffector(DragBehavior, BoxLayout):
     x3 = NumericProperty(0.0)
     y3 = NumericProperty(0.0)
     z3 = NumericProperty(0.0)
+    depth = NumericProperty(0.0)
     projection_mode = NumericProperty(0.0)
     
     def __init__(self, **kwargs):
@@ -65,7 +66,7 @@ class EndEffector(DragBehavior, BoxLayout):
         if self._syncing_display:
             return
         self._syncing_3d = True
-        x3, y3, z3 = projection2d.back_project((self.center_x, self.center_y), self.projection_mode, self.z3, (Window.width, Window.height))
+        x3, y3, z3 = projection2d.back_project((self.center_x, self.center_y), self.projection_mode, self.depth, (Window.width, Window.height))
         self.x3, self.y3, self.z3 = x3, y3, z3
         self._syncing_3d = False
 
@@ -73,8 +74,9 @@ class EndEffector(DragBehavior, BoxLayout):
         if self._syncing_3d:
             return
         self._syncing_display = True
-        u, v = projection2d.project_point((self.x3, self.y3, self.z3), self.projection_mode, (Window.width, Window.height))
+        u, v, depth = projection2d.project_point((self.x3, self.y3, self.z3), self.projection_mode, (Window.width, Window.height))
         self.center = (u, v)
+        self.depth = depth
         self._update_position_text()
         self._syncing_display = False
         

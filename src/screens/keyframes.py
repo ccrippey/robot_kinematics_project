@@ -114,6 +114,9 @@ class KeyframeEditor(Screen):
     def on_projection_mode(self, instance, value):
         # Any change to KeyframeEditor.projection_mode runs through here.
         with self.suspend_motion_propagation():
+            self._pelvis_prev = None
+            self._shoulder_prev = None
+            self._foot_midpoint_base = None
             # update effs and ghost based on *value* instead of self.projection_mode
             for eff_id in ('curr_hand_left', 'curr_hand_right',
                            'curr_foot_left', 'curr_foot_right',
