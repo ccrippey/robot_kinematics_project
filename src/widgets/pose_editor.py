@@ -76,7 +76,6 @@ class PoseEditor(RelativeLayout):
         for eff_id in all_effectors:
             eff = self.ids[eff_id]
             eff.projection_mode = self.projection_mode
-            self.bind(projection_mode=lambda inst, val, e=eff: setattr(e, "projection_mode", val))
 
     def on_projection_mode(self, instance, value):
         """Handle projection mode changes."""
@@ -86,6 +85,10 @@ class PoseEditor(RelativeLayout):
         self._pelvis_prev = None
         self._shoulder_prev = None
         self._foot_midpoint_base = None
+        self._loading_pose = True
+        self.projection_mode = value
+        self._apply_projection_mode()
+        self._loading_pose = False
 
     def _initialize_motion_propagation(self):
         """Set up motion propagation between effectors."""
@@ -204,7 +207,7 @@ class PoseEditor(RelativeLayout):
 
     def _on_shoulder_moved(self, *args):
         """When shoulder moves, propagate to hands."""
-        if self._suppress_shoulder_event:
+        if self._loading_pose or self._suppress_shoulder_event:
             shoulder = self.ids["shoulder"]
             self._shoulder_prev = shoulder.center
             return

@@ -30,6 +30,7 @@ class EndEffector(DragBehavior, BoxLayout):
         # Configure drag behavior to allow dragging from anywhere on the widget
         self._update_drag_rect()
         self.drag_distance = 5
+        self.center_x, self.center_y = 0, 0
 
         # Internal flags to avoid recursion when syncing 2D/3D
         self._syncing_display = False
