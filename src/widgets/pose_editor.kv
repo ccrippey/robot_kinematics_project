@@ -1,0 +1,37 @@
+#:kivy 2.3.1
+
+<PoseEditor>:
+    StickFigure:
+        id: stick_figure
+        size_hint: 1, 1
+        pos: 0, 0
+
+    EndEffector:
+        id: hand_left
+        pos: 100, 300
+        color: (0, 1, 0, 1)
+
+    EndEffector:
+        id: hand_right
+        pos: 200, 300
+        color: (1, 0, 0, 1)
+
+    EndEffector:
+        id: foot_left
+        pos: 100, 100
+        color: (0, 0, 1, 1)
+
+    EndEffector:
+        id: foot_right
+        pos: 200, 100
+        color: (1, 1, 0, 1)
+
+    EndEffector:
+        id: shoulder
+        pos: 150, 280
+        color: (1, 0, 1, 1)
+
+    EndEffector:
+        id: pelvis
+        pos: 150, 130
+        color: (0, 1, 1, 1)

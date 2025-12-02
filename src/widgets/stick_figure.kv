@@ -3,10 +3,8 @@
     # TorsoHead combines head and torso, defined by shoulder and pelvis points
     TorsoHead:
         id: torso_head
-        shoulder_x: root.shoulder_x
-        shoulder_y: root.shoulder_y
-        pelvis_x: root.pelvis_x
-        pelvis_y: root.pelvis_y
+        shoulder_pos: root.shoulder_pos2d
+        pelvis_pos: root.pelvis_pos2d
         head_image: root.head_image
         head_size: (root.width + root.height) // 30
     
@@ -16,8 +14,7 @@
         a1: root.height * 0.14
         a2: root.height * 0.12
         theta: 10
-        origin_x: root.shoulder_x
-        origin_y: root.shoulder_y
+        origin_pos: root.shoulder_pos2d
         theta_origin: 250
 
     # Right arm - origin at shoulder
@@ -26,8 +23,7 @@
         a1: root.height * 0.14
         a2: root.height * 0.12
         theta: -10
-        origin_x: root.shoulder_x
-        origin_y: root.shoulder_y
+        origin_pos: root.shoulder_pos2d
         theta_origin: 290
     
     # Left leg - origin at pelvis
@@ -36,8 +32,7 @@
         a1: root.height * 0.15
         a2: root.height * 0.14
         theta: -10
-        origin_x: root.pelvis_x
-        origin_y: root.pelvis_y
+        origin_pos: root.pelvis_pos2d
         theta_origin: 280
 
     # Right leg - origin at pelvis
@@ -46,6 +41,6 @@
         a1: root.height * 0.15
         a2: root.height * 0.14
         theta: 10
-        origin_x: root.pelvis_x
-        origin_y: root.pelvis_y
+        origin_pos: root.pelvis_pos2d
         theta_origin: 260
+
