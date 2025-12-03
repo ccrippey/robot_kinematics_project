@@ -11,7 +11,7 @@
             padding: 10    
             spacing: 10      
             size_hint_y: None
-            height: top_bar1.height + top_bar2.height + top_bar3.height + 30  
+            height: top_bar1.height + top_bar2.height + 40  
 
             BoxLayout:
                 id: top_bar1
@@ -34,31 +34,6 @@
                 height: '48dp'
                 spacing: 10
                 Label:
-                    text: root.frame_label
-                    color: 0, 0, 0, 1
-                Button:
-                    text: '+ keyframe'
-                    on_release: root.add_keyframe()
-                Button:
-                    text: '<<'
-                    on_release: root.prev_frame()
-                Spinner:
-                    id: frame_spinner
-                    size_hint_x: None
-                    width: '120dp'
-                    text: str(root.current_index + 1)
-                    values: root.frame_choices
-                    on_text: root.on_frame_chosen(self.text)
-                Button:
-                    text: '>>'
-                    on_release: root.next_frame()
-
-            BoxLayout:
-                id: top_bar3
-                size_hint_y: None
-                height: '42dp'
-                spacing: 10
-                Label:
                     text: 'Viewing Angle:'
                     color: 0,0,0,1
                     size_hint_x: None
@@ -69,6 +44,76 @@
                     size_hint_x: None
                     width: '140dp'
                     on_text: root.projection_mode = float(self.text)
+                Label:
+                    text: 'Time (s):'
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '70dp'
+                TextInput:
+                    id: time_input
+                    text: f'{root.current_time:.2f}'
+                    multiline: False
+                    size_hint_x: None
+                    width: '80dp'
+                    on_text_validate: root.on_time_changed(self.text)
+                    hint_text: '0.00'
+                Label:
+                    text: 'Interp Before:'
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '100dp'
+                Spinner:
+                    id: interp_before_spinner
+                    text: root.current_interp_before
+                    values: root.interp_choices
+                    size_hint_x: None
+                    width: '120dp'
+                    on_text: root.on_interp_before_changed(self.text)
+                Label:
+                    text: 'Interp After:'
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '90dp'
+                Spinner:
+                    id: interp_after_spinner
+                    text: root.current_interp_after
+                    values: root.interp_choices
+                    size_hint_x: None
+                    width: '120dp'
+                    on_text: root.on_interp_after_changed(self.text)
+                # Widget:
+                #     size_hint_x: 0.3
+                Button:
+                    text: '<<'
+                    size_hint_x: None
+                    width: '50dp'
+                    on_release: root.prev_frame()
+                Spinner:
+                    id: frame_spinner
+                    size_hint_x: None
+                    width: '140dp'
+                    text: str(root.current_index + 1)
+                    values: root.frame_choices
+                    on_text: root.on_frame_chosen(self.text)
+                Button:
+                    text: '>>'
+                    size_hint_x: None
+                    width: '50dp'
+                    on_release: root.next_frame()
+
+            # BoxLayout:
+            #     id: top_bar3
+            #     size_hint_y: None
+            #     height: '42dp'
+            #     spacing: 10
+               
+
+            # BoxLayout:
+            #     id: top_bar4
+            #     size_hint_y: None
+            #     height: '42dp'
+            #     spacing: 10
+
 
         RelativeLayout:
             id: canvas_area

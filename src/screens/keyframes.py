@@ -1,8 +1,25 @@
 from copy import deepcopy
+from enum import Enum
 
 from kivy.clock import Clock
 from kivy.properties import ListProperty, NumericProperty, StringProperty
 from kivy.uix.screenmanager import Screen
+
+
+class InterpolationMode(Enum):
+    """Interpolation modes for keyframe animation."""
+
+    NONE = "None"
+    CONSTANT = "Constant"
+    LINEAR = "Linear"
+    BEZIER = "Bezier"
+    SINUSOIDAL = "Sinusoidal"
+    QUADRATIC = "Quadratic"
+    CUBIC = "Cubic"
+    ELASTIC = "Elastic"
+
+
+INTERPOLATION_MODES = [mode.value for mode in InterpolationMode if mode != InterpolationMode.NONE]
 
 
 class KeyframeEditor(Screen):
@@ -12,10 +29,16 @@ class KeyframeEditor(Screen):
     frame_label = StringProperty("Frame 1 / 1")
     frame_choices = ListProperty(["1"])
     current_index = NumericProperty(0)
+    current_time = NumericProperty(0.0)
+    current_interp_before = StringProperty("None")
+    current_interp_after = StringProperty("None")
+    interp_choices = ListProperty(INTERPOLATION_MODES)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.frames = []
+        self.frame_times = []  # Time in seconds for each frame
+        self.frame_interps = []  # Interpolation mode before each frame
         self._initial_frame = None
         Clock.schedule_once(self._post_init, 0)
 
@@ -38,6 +61,8 @@ class KeyframeEditor(Screen):
         # Capture the starting pose as frame 1
         self._initial_frame = self.ids["current_pose"].capture_pose()
         self.frames = [deepcopy(self._initial_frame)]
+        self.frame_times = [0.0]  # First frame always at t=0
+        self.frame_interps = [InterpolationMode.NONE]  # First frame has no interpolation before it
         self._refresh_frame_meta()
         self._load_frame(0)
 
@@ -45,15 +70,19 @@ class KeyframeEditor(Screen):
         """Update frame counter and spinner choices."""
         total = max(1, len(self.frames))
         self.frame_label = f"Frame {self.current_index + 1} / {total}"
-        self.frame_choices = [str(i + 1) for i in range(total)]
+        self.frame_choices = [str(i + 1) for i in range(total)] + ["+ New Keyframe"]
         if "frame_spinner" in self.ids:
             self.ids.frame_spinner.text = str(self.current_index + 1)
+
+        # Update time and interpolation UI
+        self._update_time_interp_ui()
 
     def _save_current_to_list(self):
         """Save current pose to the frame list."""
         if not self.frames:
             return
         self.frames[self.current_index] = self.ids["current_pose"].capture_pose()
+        # Time and interpolation are saved via their on_change handlers
 
     def _load_frame(self, index):
         """Load a frame by index."""
@@ -73,6 +102,16 @@ class KeyframeEditor(Screen):
         else:
             self.ids["ghost_layer"].opacity = 0
 
+        # Load time and interpolation for this frame
+        self.current_time = self.frame_times[index]
+        self.current_interp_before = self.frame_interps[index].value
+
+        # Set interp_after (interpolation to next frame)
+        if index < len(self.frames) - 1:
+            self.current_interp_after = self.frame_interps[index + 1].value
+        else:
+            self.current_interp_after = "None"
+
         self._refresh_frame_meta()
 
     def add_keyframe(self):
@@ -82,6 +121,12 @@ class KeyframeEditor(Screen):
             deepcopy(self.frames[self.current_index]) if self.frames else self.ids["current_pose"].capture_pose()
         )
         self.frames.append(new_frame)
+
+        # New frame gets time 1 second after current, with Linear interpolation
+        new_time = self.frame_times[self.current_index] + 1.0 if self.frame_times else 1.0
+        self.frame_times.append(new_time)
+        self.frame_interps.append(InterpolationMode.LINEAR)
+
         self._load_frame(len(self.frames) - 1)
 
     def next_frame(self):
@@ -98,6 +143,11 @@ class KeyframeEditor(Screen):
         self._load_frame(self.current_index - 1)
 
     def on_frame_chosen(self, text_value):
+        # Handle "+ New Keyframe" option
+        if text_value == "+ New Keyframe":
+            self.add_keyframe()
+            return
+
         try:
             idx = int(text_value) - 1
         except ValueError:
@@ -111,6 +161,8 @@ class KeyframeEditor(Screen):
         self.frames = (
             [deepcopy(self._initial_frame)] if self._initial_frame else [self.ids["current_pose"].capture_pose()]
         )
+        self.frame_times = [0.0]
+        self.frame_interps = [InterpolationMode.NONE]
         self._load_frame(0)
 
     def go_home(self):
@@ -122,3 +174,75 @@ class KeyframeEditor(Screen):
         self._save_current_to_list()
         if self.manager and "animation" in self.manager.screen_names:
             self.manager.current = "animation"
+
+    def _update_time_interp_ui(self):
+        """Update time and interpolation UI widgets based on current frame."""
+        if not self.frames:
+            return
+
+        # Enable/disable time input (first frame is always 0)
+        is_first = self.current_index == 0
+        is_last = self.current_index == len(self.frames) - 1
+        self.ids.time_input.disabled = is_first
+
+        # Enable/disable interpolation before spinner (first frame has None)
+        self.ids.interp_before_spinner.disabled = is_first
+        if is_first:
+            self.ids.interp_before_spinner.text = "None"
+
+        # Enable/disable interpolation after spinner (last frame has None)
+        self.ids.interp_after_spinner.disabled = is_last
+        if is_last:
+            self.ids.interp_after_spinner.text = "None"
+
+    def on_time_changed(self, text_value):
+        """Handle user changing the time value."""
+        if self.current_index == 0:
+            # First frame is always at t=0
+            return
+
+        try:
+            new_time = float(text_value)
+        except ValueError:
+            return
+
+        # Validate: must be after previous frame
+        if self.current_index > 0:
+            prev_time = self.frame_times[self.current_index - 1]
+            if new_time <= prev_time:
+                new_time = prev_time + 0.01  # Minimum gap
+
+        # Validate: must be before next frame
+        if self.current_index < len(self.frames) - 1:
+            next_time = self.frame_times[self.current_index + 1]
+            if new_time >= next_time:
+                new_time = next_time - 0.01  # Minimum gap
+
+        self.frame_times[self.current_index] = new_time
+        self.current_time = new_time
+
+        # Update the text input to show validated value
+        if "time_input" in self.ids:
+            self.ids.time_input.text = f"{new_time:.2f}"
+
+    def on_interp_before_changed(self, text_value):
+        """Handle user changing the interpolation mode before this frame."""
+        if self.current_index == 0:
+            # First frame has no interpolation before it
+            return
+
+        # Convert string value to enum
+        mode = InterpolationMode[text_value.upper()]
+        self.frame_interps[self.current_index] = mode
+        self.current_interp_before = text_value
+
+    def on_interp_after_changed(self, text_value):
+        """Handle user changing the interpolation mode after this frame."""
+        if self.current_index >= len(self.frames) - 1:
+            # Last frame has no interpolation after it
+            return
+
+        # Convert string value to enum and apply to next frame
+        mode = InterpolationMode[text_value.upper()]
+        self.frame_interps[self.current_index + 1] = mode
+        self.current_interp_after = text_value
