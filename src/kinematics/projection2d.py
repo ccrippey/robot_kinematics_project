@@ -27,9 +27,11 @@ def back_project(point2d: Tuple[float, float], z_rotation: float = 0.0, depth: f
     return float(point3[0]), float(point3[1]), float(point3[2])
 
 
-def project_points(points: Iterable[Tuple[float, float, float]], z_rotation: float = 0.0) -> list:
-    return [project_point(p, z_rotation) for p in points]
+def project_points(points: Iterable[Tuple[float, float, float]], z_rotation: float = 0.0, center=[0,0]) -> list:
+    return [project_point(p, z_rotation, center) for p in points]
 
+# def project_limb(points):
+#     origin = points[0]
 
 def test_simple_projection():
     print("=== test_simple_projection ===")

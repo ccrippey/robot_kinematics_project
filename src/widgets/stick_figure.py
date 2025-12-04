@@ -2,8 +2,10 @@ from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty, StringProperty
 from kivy.vector import Vector
 from kivy.core.window import Window
-from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link
+from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link, inverse_kinematics_3D_2link
+from src.kinematics.forward_kinematics import forward_kinematics_3D_2link
 from src.kinematics import projection2d
+from src.kinematics.projection2d import project_points
 
 
 class StickFigure(Widget):
@@ -86,17 +88,44 @@ class StickFigure(Widget):
         if not required_ids.issubset(self.ids):
             return
 
+        # limb_configs = [
+        #     ("left_arm", "shoulder_pos2d", "left_hand_pos2d"),
+        #     ("right_arm", "shoulder_pos2d", "right_hand_pos2d"),
+        #     ("left_leg", "pelvis_pos2d", "left_foot_pos2d"),
+        #     ("right_leg", "pelvis_pos2d", "right_foot_pos2d"),
+        # ]
+
         limb_configs = [
-            ("left_arm", "shoulder_pos2d", "left_hand_pos2d"),
-            ("right_arm", "shoulder_pos2d", "right_hand_pos2d"),
-            ("left_leg", "pelvis_pos2d", "left_foot_pos2d"),
-            ("right_leg", "pelvis_pos2d", "right_foot_pos2d"),
+            ("left_arm", "shoulder_pos3d", "left_hand_pos3d"),
+            ("right_arm", "shoulder_pos3d", "right_hand_pos3d"),
+            ("left_leg", "pelvis_pos3d", "left_foot_pos3d"),
+            ("right_leg", "pelvis_pos3d", "right_foot_pos3d"),
         ]
 
         for limb_id, origin_attr, target_attr in limb_configs:
+            if limb_id == "left_arm":
+                print("STARTING LEFT ARM")
             limb = self.ids[limb_id]
             origin = getattr(self, origin_attr)
             target = getattr(self, target_attr)
-            limb.theta_origin, limb.theta = inverse_kinematics_2D_2link(
-                limb.a1, limb.a2, origin[0], origin[1], target[0], target[1]
+            # limb.theta_origin, limb.theta = inverse_kinematics_2D_2link(
+            #     limb.a1, limb.a2, origin[0], origin[1], target[0], target[1]
+            # )
+            a1 =  2*limb.a1/(Window.width+Window.height)
+            a2 =  2*limb.a2/(Window.width+Window.height)
+            hip_yaw, hip_pitch, hip_roll, knee_pitch = inverse_kinematics_3D_2link(
+                a1, a2, origin, target
             )
+            points3 = forward_kinematics_3D_2link(a1, a2, origin, hip_yaw, hip_pitch, hip_roll, knee_pitch)
+            points2 = project_points(points3, self.projection_mode, (Window.width, Window.height))
+            points2d_flat = [int(p) for point in points2 for p in point[:2]]
+            limb.line.points = points2d_flat
+            if limb_id == "left_arm":
+                print("a1", a1, "a2", a2)
+                print(origin, "target", target)
+                print(points3)
+                print(points2)
+                print(points2d_flat)
+                print(hip_yaw, hip_pitch, hip_roll, knee_pitch)
+                print("ENDING LEFT ARM")
+
