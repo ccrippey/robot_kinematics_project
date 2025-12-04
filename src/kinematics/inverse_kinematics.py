@@ -49,4 +49,8 @@ def inverse_kinematics_3D_2link(a1, a2, base3, end3):
     return solutions
 
 def choose_best_solution_3d(solutions, limb_id):
-    return solutions[0]
+    best_soln = solutions[0]
+    for soln in solutions:
+        if (limb_id == "left_leg" or limb_id == "right_leg") and soln[1] > best_soln[1]: #Find biggest hip pitch
+            best_soln = soln
+    return best_soln
