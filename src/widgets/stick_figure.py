@@ -83,9 +83,9 @@ class StickFigure(Widget):
             setattr(self, f"{name}_pos2d", [x, y])
 
     def inverse_kinematics_update(self, *args):
-        # required_ids = {"left_arm", "right_arm", "left_leg", "right_leg"}
-        # if not required_ids.issubset(self.ids):
-        #     return
+        required_ids = {"left_arm", "right_arm", "left_leg", "right_leg"}
+        if not required_ids.issubset(self.ids):
+            return
 
         limb_configs = [
             ("left_arm", "shoulder_pos3d", "left_hand_pos3d"),
