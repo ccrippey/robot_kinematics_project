@@ -88,13 +88,6 @@ class StickFigure(Widget):
         if not required_ids.issubset(self.ids):
             return
 
-        # limb_configs = [
-        #     ("left_arm", "shoulder_pos2d", "left_hand_pos2d"),
-        #     ("right_arm", "shoulder_pos2d", "right_hand_pos2d"),
-        #     ("left_leg", "pelvis_pos2d", "left_foot_pos2d"),
-        #     ("right_leg", "pelvis_pos2d", "right_foot_pos2d"),
-        # ]
-
         limb_configs = [
             ("left_arm", "shoulder_pos3d", "left_hand_pos3d"),
             ("right_arm", "shoulder_pos3d", "right_hand_pos3d"),
@@ -106,9 +99,7 @@ class StickFigure(Widget):
             limb = self.ids[limb_id]
             origin = getattr(self, origin_attr)
             target = getattr(self, target_attr)
-            # limb.theta_origin, limb.theta = inverse_kinematics_2D_2link(
-            #     limb.a1, limb.a2, origin[0], origin[1], target[0], target[1]
-            # )
+
             a1 =  2*limb.a1/(Window.width+Window.height)
             a2 =  2*limb.a2/(Window.width+Window.height)
             solutions = inverse_kinematics_3D_2link(

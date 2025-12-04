@@ -21,7 +21,7 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
         solution.append((theta1,theta2))
     else:
         theta2 = 2*math.atan(math.sqrt( ((a1 + a2)**2 - (Px**2 + Py**2))/( (Px**2 + Py**2) - (a1 - a2)**2 ) ))
-        theta2_alt = -1*theta2 #Negative soln ignored for now
+        theta2_alt = -1*theta2
         theta1 = math.atan2(Py,Px) - math.atan2(a2*math.sin(theta2), a1+a2*math.cos(theta2))
         theta1_alt = math.atan2(Py,Px) - math.atan2(a2*math.sin(theta2_alt), a1+a2*math.cos(theta2_alt))
         solution.append((theta1,theta2))
@@ -31,7 +31,6 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
 
 def inverse_kinematics_3D_2link(a1, a2, base3, end3):
     Px = end3[0] - base3[0]
-    Py = end3[1] - base3[1]
     Pz = end3[2] - base3[2]
 
     solutions = []
@@ -39,12 +38,12 @@ def inverse_kinematics_3D_2link(a1, a2, base3, end3):
     # the sign before passing to forward kinematics to match its frame.
     yaw_plane = math.atan2(Pz, Px)
     yaw_planes = [yaw_plane, -yaw_plane]
-    for plane in yaw_planes:
-        hip_yaw = -plane
-        end_relative = np.array(end3)-np.array(base3)
-        end2 = rot3y(yaw_plane) @ end_relative.T
+    for yaw_plane in yaw_planes:
+        hip_yaw = -yaw_plane
+        end3_shifted = np.array(end3)-np.array(base3)
+        end3_shifted_projected = rot3y(yaw_plane) @ end3_shifted.T
         hip_roll = 0
-        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(a1, a2, 0,0, end2[0], end2[1]):
+        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]):
             solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
 
     return solutions

@@ -69,7 +69,7 @@ def forward_kinematics_2D_2link(a1, a2, x0, y0, theta1, theta2):
     return points
 
 def forward_kinematics_3D_2link(a1, a2, base3, hip_yaw, hip_pitch, hip_roll, knee_pitch):
-    T_axis_rot = dhLink(0,0,-math.pi/2,0)
+    T_projection = dhLink(0,0,-math.pi/2,0)
     T0 = dhLink(0,0,math.pi/2,hip_yaw)
     T1 = dhLink(0,0,-math.pi/2,hip_pitch)
     T2 = dhLink(a1,0,math.pi/2,hip_roll)
@@ -78,8 +78,8 @@ def forward_kinematics_3D_2link(a1, a2, base3, hip_yaw, hip_pitch, hip_roll, kne
 
     origin0_translated = np.array(base3)
     origin0 = np.array([0, 0, 0, 1])
-    origin1 = T_axis_rot @ T0 @ T1 @ T2 @ origin0
-    origin2 = T_axis_rot @ T0 @ T1 @ T2 @ T3 @ origin0
+    origin1 = T_projection @ T0 @ T1 @ T2 @ origin0
+    origin2 = T_projection @ T0 @ T1 @ T2 @ T3 @ origin0
     points = []
     points.append(origin0[:3] + origin0_translated)  
     points.append(origin1[:3] + origin0_translated)
