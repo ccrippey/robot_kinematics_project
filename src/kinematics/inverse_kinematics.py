@@ -10,29 +10,44 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
     Py = y_end - y_base
     r_p = math.sqrt(Px**2 + Py**2)
     r_lim = a1 + a2
+    solution = []
     if (r_p > r_lim):
         theta2 = 0
         theta1 = math.atan2(Py,Px)
+        solution.append((theta1,theta2))
     elif (Px**2 + Py**2) - (a1 - a2)**2 < 1e-3:
         theta2 = math.pi
         theta1 = math.atan2(Py,Px)
+        solution.append((theta1,theta2))
     else:
         theta2 = 2*math.atan(math.sqrt( ((a1 + a2)**2 - (Px**2 + Py**2))/( (Px**2 + Py**2) - (a1 - a2)**2 ) ))
-        #theta2_alt = -1*theta2 #Negative soln ignored for now
+        theta2_alt = -1*theta2 #Negative soln ignored for now
         theta1 = math.atan2(Py,Px) - math.atan2(a2*math.sin(theta2), a1+a2*math.cos(theta2))
+        theta1_alt = math.atan2(Py,Px) - math.atan2(a2*math.sin(theta2_alt), a1+a2*math.cos(theta2_alt))
+        solution.append((theta1,theta2))
+        solution.append((theta1_alt,theta2_alt))
 
-    return (theta1, theta2)
+    return solution
 
 def inverse_kinematics_3D_2link(a1, a2, base3, end3):
     Px = end3[0] - base3[0]
     Py = end3[1] - base3[1]
     Pz = end3[2] - base3[2]
-    hip_yaw = math.atan2(Pz, Px)
 
-    
-    end_relative = np.array(end3)-np.array(base3)
-    end2 = rot3y(hip_yaw) @ end_relative.T
-    hip_pitch, knee_pitch = inverse_kinematics_2D_2link(a1, a2, 0,0, end2[0], end2[1])
-    hip_roll = 0
+    solutions = []
+    # Use the yaw that aligns the target with +X for the 2D IK plane, but flip
+    # the sign before passing to forward kinematics to match its frame.
+    yaw_plane = math.atan2(Pz, Px)
+    yaw_planes = [yaw_plane, -yaw_plane]
+    for plane in yaw_planes:
+        hip_yaw = -plane
+        end_relative = np.array(end3)-np.array(base3)
+        end2 = rot3y(yaw_plane) @ end_relative.T
+        hip_roll = 0
+        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(a1, a2, 0,0, end2[0], end2[1]):
+            solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
 
-    return (hip_yaw, hip_pitch, hip_roll, knee_pitch)
+    return solutions
+
+def choose_best_solution_3d(solutions, limb_id):
+    return solutions[0]

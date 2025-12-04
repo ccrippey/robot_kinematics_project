@@ -2,7 +2,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty, StringProperty
 from kivy.vector import Vector
 from kivy.core.window import Window
-from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link, inverse_kinematics_3D_2link
+from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link, inverse_kinematics_3D_2link, choose_best_solution_3d
 from src.kinematics.forward_kinematics import forward_kinematics_3D_2link
 from src.kinematics import projection2d
 from src.kinematics.projection2d import project_points
@@ -103,8 +103,6 @@ class StickFigure(Widget):
         ]
 
         for limb_id, origin_attr, target_attr in limb_configs:
-            if limb_id == "left_arm":
-                print("STARTING LEFT ARM")
             limb = self.ids[limb_id]
             origin = getattr(self, origin_attr)
             target = getattr(self, target_attr)
@@ -113,19 +111,12 @@ class StickFigure(Widget):
             # )
             a1 =  2*limb.a1/(Window.width+Window.height)
             a2 =  2*limb.a2/(Window.width+Window.height)
-            hip_yaw, hip_pitch, hip_roll, knee_pitch = inverse_kinematics_3D_2link(
+            solutions = inverse_kinematics_3D_2link(
                 a1, a2, origin, target
             )
+            hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_id)
             points3 = forward_kinematics_3D_2link(a1, a2, origin, hip_yaw, hip_pitch, hip_roll, knee_pitch)
             points2 = project_points(points3, self.projection_mode, (Window.width, Window.height))
             points2d_flat = [int(p) for point in points2 for p in point[:2]]
             limb.line.points = points2d_flat
-            if limb_id == "left_arm":
-                print("a1", a1, "a2", a2)
-                print(origin, "target", target)
-                print(points3)
-                print(points2)
-                print(points2d_flat)
-                print(hip_yaw, hip_pitch, hip_roll, knee_pitch)
-                print("ENDING LEFT ARM")
 
