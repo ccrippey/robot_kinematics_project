@@ -34,16 +34,16 @@ def inverse_kinematics_3D_2link(a1, a2, base3, end3):
     Pz = end3[2] - base3[2]
 
     solutions = []
-    # Use the yaw that aligns the target with +X for the 2D IK plane, but flip
-    # the sign before passing to forward kinematics to match its frame.
-    yaw_plane = math.atan2(Pz, Px)
-    yaw_planes = [yaw_plane, -yaw_plane]
+    yaw = math.atan2(Pz, Px)
+    yaw_planes = [yaw, yaw + math.pi]
     for yaw_plane in yaw_planes:
         hip_yaw = -yaw_plane
-        end3_shifted = np.array(end3)-np.array(base3)
+        end3_shifted = np.array(end3) - np.array(base3)
         end3_shifted_projected = rot3y(yaw_plane) @ end3_shifted.T
         hip_roll = 0
-        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]):
+        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(
+            a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]
+        ):
             solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
 
     return solutions
