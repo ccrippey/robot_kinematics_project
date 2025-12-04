@@ -42,47 +42,61 @@
                     text: str(root.projection_mode)
                     values: ["-90", "-45","0", "45", "90"]
                     size_hint_x: None
-                    width: '140dp'
+                    width: '70dp'
                     on_text: root.projection_mode = float(self.text)
                 Label:
                     text: 'Time (s):'
                     color: 0, 0, 0, 1
                     size_hint_x: None
-                    width: '70dp'
+                    width: '50dp'
                 TextInput:
                     id: time_input
                     text: f'{root.current_time:.2f}'
                     multiline: False
                     size_hint_x: None
-                    width: '80dp'
+                    width: '70dp'
                     on_text_validate: root.on_time_changed(self.text)
                     hint_text: '0.00'
                 Label:
-                    text: 'Interp Before:'
+                    text: 'Before:'
                     color: 0, 0, 0, 1
                     size_hint_x: None
-                    width: '100dp'
+                    width: '55dp'
                 Spinner:
                     id: interp_before_spinner
                     text: root.current_interp_before
                     values: root.interp_choices
                     size_hint_x: None
-                    width: '120dp'
+                    width: '100dp'
                     on_text: root.on_interp_before_changed(self.text)
-                Label:
-                    text: 'Interp After:'
-                    color: 0, 0, 0, 1
+                Spinner:
+                    id: space_before_spinner
+                    text: root.current_space_before
+                    values: root.space_choices
                     size_hint_x: None
                     width: '90dp'
+                    on_text: root.on_space_before_changed(self.text)
+                Label:
+                    text: 'After:'
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '50dp'
                 Spinner:
                     id: interp_after_spinner
                     text: root.current_interp_after
                     values: root.interp_choices
                     size_hint_x: None
-                    width: '120dp'
+                    width: '100dp'
                     on_text: root.on_interp_after_changed(self.text)
-                # Widget:
-                #     size_hint_x: 0.3
+                Spinner:
+                    id: space_after_spinner
+                    text: root.current_space_after
+                    values: root.space_choices
+                    size_hint_x: None
+                    width: '90dp'
+                    on_text: root.on_space_after_changed(self.text)
+                Widget:
+                    size_hint_x: 0.1
                 Button:
                     text: '<<'
                     size_hint_x: None
@@ -100,19 +114,6 @@
                     size_hint_x: None
                     width: '50dp'
                     on_release: root.next_frame()
-
-            # BoxLayout:
-            #     id: top_bar3
-            #     size_hint_y: None
-            #     height: '42dp'
-            #     spacing: 10
-               
-
-            # BoxLayout:
-            #     id: top_bar4
-            #     size_hint_y: None
-            #     height: '42dp'
-            #     spacing: 10
 
 
         RelativeLayout:

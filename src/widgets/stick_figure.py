@@ -1,6 +1,5 @@
 from kivy.uix.widget import Widget
-from kivy.properties import NumericProperty, ReferenceListProperty, ListProperty, StringProperty
-from kivy.vector import Vector
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.core.window import Window
 from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link
 from src.kinematics import projection2d
