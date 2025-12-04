@@ -110,3 +110,16 @@ class StickFigure(Widget):
             points2d_flat = [int(p) for point in points2 for p in point[:2]]
             limb.line.points = points2d_flat
 
+    def on_projection_mode(self, *args):
+        if self.projection_mode == 45.0:
+            self.head_image = "assets/R45.png"
+        elif self.projection_mode == -45.0:
+            self.head_image = "assets/L45.png"
+        elif self.projection_mode == 90.0:
+            self.head_image = "assets/Right.png"
+        elif self.projection_mode == -90.0:
+            self.head_image = "assets/Left.png"
+        elif self.projection_mode == 180.0:
+            self.head_image = "assets/Back.png"
+        elif self.projection_mode == 0.0:
+            self.head_image = "assets/He watches.png"
