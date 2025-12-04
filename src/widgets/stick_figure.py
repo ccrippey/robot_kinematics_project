@@ -1,10 +1,16 @@
+import kivy
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.core.window import Window
-from src.kinematics.inverse_kinematics import inverse_kinematics_2D_2link, inverse_kinematics_3D_2link, choose_best_solution_3d
+from src.kinematics.inverse_kinematics import (
+    inverse_kinematics_2D_2link,
+    inverse_kinematics_3D_2link,
+    choose_best_solution_3d,
+)
 from src.kinematics.forward_kinematics import forward_kinematics_3D_2link
 from src.kinematics import projection2d
 from src.kinematics.projection2d import project_points
+from kivy.clock import Clock
 
 
 class StickFigure(Widget):
@@ -63,7 +69,10 @@ class StickFigure(Widget):
             pelvis_pos2d=self.inverse_kinematics_update,
         )
 
-        # Initial projection + IK
+        Clock.schedule_once(self._initialize_projection, 0)
+
+    def _initialize_projection(self, dt):
+        """Initialize projection and IK after widget tree is ready."""
         self._update_projection_2d()
         self.inverse_kinematics_update()
 
@@ -99,11 +108,9 @@ class StickFigure(Widget):
             origin = getattr(self, origin_attr)
             target = getattr(self, target_attr)
 
-            a1 =  2*limb.a1/(Window.width+Window.height)
-            a2 =  2*limb.a2/(Window.width+Window.height)
-            solutions = inverse_kinematics_3D_2link(
-                a1, a2, origin, target
-            )
+            a1 = 2 * limb.a1 / (Window.width + Window.height)
+            a2 = 2 * limb.a2 / (Window.width + Window.height)
+            solutions = inverse_kinematics_3D_2link(a1, a2, origin, target)
             hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_id)
             points3 = forward_kinematics_3D_2link(a1, a2, origin, hip_yaw, hip_pitch, hip_roll, knee_pitch)
             points2 = project_points(points3, self.projection_mode, (Window.width, Window.height))

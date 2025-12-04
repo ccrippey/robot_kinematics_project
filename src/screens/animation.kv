@@ -3,14 +3,114 @@
 <AnimationScreen>:
     BoxLayout:
         orientation: 'vertical'
-        padding: 40
-        spacing: 20
-        Label:
-            text: 'TODO Add animations'
-            color: 0, 0, 0, 1
-            font_size: 28
-        Button:
-            text: 'Back to Home'
+        padding: 0
+        spacing: 0
+
+        # Top control bar
+        BoxLayout:
+            orientation: 'vertical'
+            padding: 10
+            spacing: 10
             size_hint_y: None
-            height: '48dp'
-            on_release: app.root.current = 'home'
+            height: top_bar1.height + top_bar2.height + 40
+
+            BoxLayout:
+                id: top_bar1
+                size_hint_y: None
+                height: '48dp'
+                spacing: 10
+                
+                Button:
+                    text: 'Home'
+                    size_hint_x: None
+                    width: '100dp'
+                    on_release: root.go_home()
+                
+                Button:
+                    text: 'Back to Editor'
+                    size_hint_x: None
+                    width: '150dp'
+                    on_release: root.go_keyframes()
+                
+                Widget:
+                    size_hint_x: 0.5
+                
+                Label:
+                    text: root.time_display
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '100dp'
+                
+                Label:
+                    text: root.frame_display
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '150dp'
+
+            BoxLayout:
+                id: top_bar2
+                size_hint_y: None
+                height: '48dp'
+                spacing: 10
+                
+                # Playback controls
+                Button:
+                    text: '|<<'
+                    size_hint_x: None
+                    width: '60dp'
+                    on_release: root.skip_to_start()
+                
+                Button:
+                    text: '< KF'
+                    size_hint_x: None
+                    width: '60dp'
+                    on_release: root.prev_keyframe()
+                
+                Button:
+                    text: 'Play' if not root.is_playing else 'Pause'
+                    size_hint_x: None
+                    width: '80dp'
+                    on_release: root.play_pause()
+                
+                Button:
+                    text: 'KF >'
+                    size_hint_x: None
+                    width: '60dp'
+                    on_release: root.next_keyframe()
+                
+                Button:
+                    text: '>>|'
+                    size_hint_x: None
+                    width: '60dp'
+                    on_release: root.skip_to_end()
+                
+                Widget:
+                    size_hint_x: 0.2
+                
+                Label:
+                    text: 'Time (s):'
+                    color: 0, 0, 0, 1
+                    size_hint_x: None
+                    width: '70dp'
+                
+                TextInput:
+                    id: time_seek_input
+                    text: f'{root.current_time:.2f}'
+                    multiline: False
+                    size_hint_x: None
+                    width: '80dp'
+                    on_text_validate: root.on_time_input(self.text)
+                    hint_text: '0.00'
+
+        # Animation viewer area
+        RelativeLayout:
+            id: canvas_area
+            canvas.before:
+                Color:
+                    rgba: 0.95, 0.95, 0.97, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            PoseEditor:
+                id: pose_viewer

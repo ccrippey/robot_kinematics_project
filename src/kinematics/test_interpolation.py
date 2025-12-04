@@ -75,8 +75,8 @@ def test_interpolator(mode: str, test_cases: List[Tuple[float, float, float, flo
         values = interpolator.interpolate(times)
 
         # Test 1: Check start and end values
-        start_val = interpolator.interpolate(np.array([t0]))[0]
-        end_val = interpolator.interpolate(np.array([t1]))[0]
+        start_val = interpolator.interpolate(np.array([t0]))
+        end_val = interpolator.interpolate(np.array([t1]))
 
         if not np.isclose(start_val, p0, atol=1e-6):
             results["passed"] = False
