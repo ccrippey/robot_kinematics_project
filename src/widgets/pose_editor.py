@@ -20,7 +20,7 @@ class PoseEditor(RelativeLayout):
     """
 
     projection_mode = NumericProperty(0.0)
-    PELVIS_FOLLOW_FACTOR = 0.35
+    PELVIS_FOLLOW_FACTOR = 0.0
 
     # Effector IDs we expect to find in the widget tree
     EFFECTOR_IDS = {
