@@ -20,7 +20,7 @@ class EndEffector(DragBehavior, BoxLayout):
     position_text = StringProperty("0, 0")  # Text displaying current position
     draggable = BooleanProperty(True)
 
-    # 3D coordinates (source of truth); display position is projected
+    # 3D coordinates in pixels
     pos3d = ListProperty([0.0, 0.0, 0.0])
     depth = NumericProperty(0.0)
     projection_mode = NumericProperty(0.0)

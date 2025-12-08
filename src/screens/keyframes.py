@@ -32,7 +32,7 @@ class KeyframeEditor(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.frames = []
+        self.frames = []  # List of CartesianStickConfig
         self.frame_times = []  # Time in seconds for each frame
         self.frame_interps = []  # InterpolationSettings before each frame
         self._initial_frame = None
@@ -90,13 +90,13 @@ class KeyframeEditor(Screen):
         self.current_index = index
 
         # Load current frame
-        self.ids["current_pose"].load_pose(self.frames[index])
+        self.ids["current_pose"].load_cart(self.frames[index])
 
         # Load previous frame into ghost
         prev_frame = self.frames[index - 1] if index > 0 else None
         if prev_frame:
             self.ids["ghost_layer"].opacity = 0.35
-            self.ids["ghost_pose"].load_pose(prev_frame)
+            self.ids["ghost_pose"].load_cart(prev_frame)
         else:
             self.ids["ghost_layer"].opacity = 0
 

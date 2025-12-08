@@ -1,8 +1,7 @@
 """Animation playback screen with precomputed trajectories."""
 
+from typing import List
 import numpy as np
-from dataclasses import dataclass
-from typing import Dict, List
 from kivy.uix.screenmanager import Screen
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty
 from kivy.clock import Clock
@@ -11,26 +10,9 @@ from kivy.core.window import Window
 from ..kinematics.interpolation import create_interpolator, InterpolationMode, InterpolationSpace
 from ..kinematics.inverse_kinematics import inverse_kinematics_3D_2link, choose_best_solution_3d
 from ..kinematics.forward_kinematics import forward_kinematics_3D_2link
-
-
-@dataclass
-class LimbConfig:
-    """Configuration for a limb - source of truth from stick_figure.kv."""
-
-    a1_ratio: float  # Ratio of height
-    a2_ratio: float
-    origin_key: str  # "shoulder" or "pelvis"
-    target_key: str  # "hand_left", etc.
-    name: str  # "left_arm", etc.
-
-
-# Limb configurations matching stick_figure.kv
-LIMB_CONFIGS = [
-    LimbConfig(0.14, 0.12, "shoulder", "hand_left", "left_arm"),
-    LimbConfig(0.14, 0.12, "shoulder", "hand_right", "right_arm"),
-    LimbConfig(0.15, 0.14, "pelvis", "foot_left", "left_leg"),
-    LimbConfig(0.15, 0.14, "pelvis", "foot_right", "right_leg"),
-]
+from ..kinematics.stick_config import (
+    CartesianStickConfig, JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
+)
 
 
 class AnimationScreen(Screen):
@@ -39,7 +21,7 @@ class AnimationScreen(Screen):
     # Playback state
     current_time = NumericProperty(0.0)
     current_frame_index = NumericProperty(0)
-    current_keyframe_index = NumericProperty(0)  # Index into keyframe_times
+    current_keyframe_index = NumericProperty(0)
     is_playing = BooleanProperty(False)
 
     # Display properties
@@ -53,21 +35,22 @@ class AnimationScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.frame_times = None  # Numpy array of all frame times
-        self.frame_poses = None  # Numpy array shape (n_frames, n_effectors, 3)
-        self.keyframe_indices = []  # Frame indices where keyframes occur
-        self.keyframe_times = []  # Times of keyframes
+        self.frame_configs_cart = None  # Array of CartesianStickConfig (for Cartesian interp)
+        self.frame_configs_joint = None  # Array of JointStickConfig (for Joint interp)
+        self.keyframe_indices = []
+        self.keyframe_times = []
         self._playback_event = None
 
     def on_pre_enter(self):
         """Called before screen is displayed - precompute animation."""
         kf_screen = self.manager.get_screen("keyframes")
-        self.keyframes = kf_screen.frames
+        self.keyframes = kf_screen.frames  # List of CartesianStickConfig
         self.keyframe_times = kf_screen.frame_times
         self.keyframe_interps = kf_screen.frame_interps
 
         if len(self.keyframes) < 2:
             self.frame_times = np.array([0.0])
-            self.frame_poses = self._poses_to_array([self.keyframes[0]]) if self.keyframes else np.zeros((1, 6, 3))
+            self.frame_configs_cart = [self.keyframes[0]] if self.keyframes else []
             self.keyframe_indices = [0]
             self.total_duration = 0.0
         else:
@@ -79,26 +62,7 @@ class AnimationScreen(Screen):
         """Stop playback when leaving screen."""
         self.pause_playback()
 
-    def _poses_to_array(self, pose_dicts: List[Dict]) -> np.ndarray:
-        """Convert list of pose dicts to numpy array (n_poses, 6, 3).
 
-        Effector order: shoulder, pelvis, hand_left, hand_right, foot_left, foot_right
-        """
-        effector_keys = ["shoulder", "pelvis", "hand_left", "hand_right", "foot_left", "foot_right"]
-        return np.array([[pose[key] for key in effector_keys] for pose in pose_dicts])
-
-    def _array_to_pose(self, pose_array: np.ndarray) -> Dict:
-        """Convert numpy array (6, 3) back to pose dict."""
-        effector_keys = ["shoulder", "pelvis", "hand_left", "hand_right", "foot_left", "foot_right"]
-        return {key: pose_array[i].tolist() for i, key in enumerate(effector_keys)}
-
-    def _get_limb_lengths(self) -> np.ndarray:
-        """Get a1, a2 for all limbs based on current window size.
-
-        Returns: array shape (4, 2) for [left_arm, right_arm, left_leg, right_leg]
-        """
-        height = Window.height
-        return np.array([[cfg.a1_ratio * height, cfg.a2_ratio * height] for cfg in LIMB_CONFIGS])
 
     def _precompute_animation(self):
         """Precompute all animation frames at target FPS using vectorized operations."""
@@ -111,8 +75,10 @@ class AnimationScreen(Screen):
             np.abs(self.frame_times[:, np.newaxis] - np.array(self.keyframe_times)), axis=0
         ).tolist()
 
-        # Precompute poses for all frames by segment
-        all_poses = []
+        # Precompute configs for all frames by segment
+        self.frame_configs_cart = []
+        self.frame_configs_joint = []
+        
         for seg_idx in range(len(self.keyframes) - 1):
             t0, t1 = self.keyframe_times[seg_idx], self.keyframe_times[seg_idx + 1]
             interp_settings = self.keyframe_interps[seg_idx + 1]
@@ -123,128 +89,113 @@ class AnimationScreen(Screen):
 
             if interp_settings.mode == InterpolationMode.NONE:
                 # Repeat first pose
-                poses = np.tile(self._poses_to_array([self.keyframes[seg_idx]])[0], (len(segment_times), 1, 1))
+                for _ in range(len(segment_times)):
+                    self.frame_configs_cart.append(self.keyframes[seg_idx])
+                    self.frame_configs_joint.append(None)  # Will convert on-demand
             elif interp_settings.space == InterpolationSpace.CARTESIAN:
-                poses = self._interpolate_cartesian_segment(
+                configs = self._interpolate_cartesian_segment(
                     self.keyframes[seg_idx], self.keyframes[seg_idx + 1], t0, t1, segment_times, interp_settings.mode
                 )
+                self.frame_configs_cart.extend(configs)
+                self.frame_configs_joint.extend([None] * len(configs))
             else:  # JOINT space
-                poses = self._interpolate_joint_segment(
+                configs = self._interpolate_joint_segment(
                     self.keyframes[seg_idx], self.keyframes[seg_idx + 1], t0, t1, segment_times, interp_settings.mode
                 )
+                self.frame_configs_cart.extend([None] * len(configs))
+                self.frame_configs_joint.extend(configs)
 
-            # Avoid duplicating frames at segment boundaries
+            # Remove duplicates at segment boundaries
             if seg_idx > 0:
-                poses = poses[1:]
-            all_poses.append(poses)
-
-        self.frame_poses = np.vstack(all_poses)
+                if self.frame_configs_cart and self.frame_configs_cart[-len(segment_times)] is not None:
+                    self.frame_configs_cart.pop(-len(segment_times))
+                    self.frame_configs_joint.pop(-len(segment_times))
+                elif self.frame_configs_joint and self.frame_configs_joint[-len(segment_times)] is not None:
+                    self.frame_configs_cart.pop(-len(segment_times))
+                    self.frame_configs_joint.pop(-len(segment_times))
 
     def _interpolate_cartesian_segment(
-        self, pose0: Dict, pose1: Dict, t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
-    ) -> np.ndarray:
+        self, config0: CartesianStickConfig, config1: CartesianStickConfig, 
+        t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
+    ) -> List[CartesianStickConfig]:
         """Interpolate Cartesian positions for all frames in segment.
 
-        Returns: array shape (n_times, 6, 3)
+        Returns: list of CartesianStickConfig objects
         """
-        p0 = self._poses_to_array([pose0])[0]  # Shape: (6, 3)
-        p1 = self._poses_to_array([pose1])[0]
+        # Convert configs to numpy arrays for interpolation
+        p0 = config0.to_numpy().flatten()  # Shape: (18,) from (6, 3)
+        p1 = config1.to_numpy().flatten()
 
-        # Create interpolator for all 18 parameters (6 effectors * 3 coords)
-        p0_flat = p0.flatten()  # Shape: (18,)
-        p1_flat = p1.flatten()
-
-        interp = create_interpolator(mode.value, t0, t1, p0_flat, p1_flat)
+        # Create interpolator for all 18 parameters
+        interp = create_interpolator(mode.value, t0, t1, p0, p1)
         result_flat = interp.interpolate(times)  # Shape: (n_times, 18)
 
-        return result_flat.reshape(-1, 6, 3)
+        # Convert back to configs
+        configs = []
+        for i in range(len(times)):
+            pose_array = result_flat[i].reshape(6, 3)
+            configs.append(CartesianStickConfig.from_numpy(pose_array))
+        
+        return configs
 
     def _interpolate_joint_segment(
-        self, pose0: Dict, pose1: Dict, t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
-    ) -> np.ndarray:
+        self, config0: CartesianStickConfig, config1: CartesianStickConfig,
+        t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
+    ) -> List[JointStickConfig]:
         """Interpolate in joint space for all frames in segment.
 
-        Returns: array shape (n_times, 6, 3)
+        Returns: list of JointStickConfig objects
         """
-        # Convert both poses to joint parameters
-        joints0 = self._pose_to_joints(pose0)  # Shape: (10,) - [4 limbs * 2 angles + 6 origin coords]
-        joints1 = self._pose_to_joints(pose1)
+        # Convert both configs to joint space
+        joint0 = self._cart_to_joint(config0)
+        joint1 = self._cart_to_joint(config1)
+
+        # Convert to numpy for interpolation
+        j0 = joint0.to_numpy()  # Shape: (22,)
+        j1 = joint1.to_numpy()
 
         # Interpolate all joint parameters at once
-        interp = create_interpolator(mode.value, t0, t1, joints0, joints1)
-        joints_interp = interp.interpolate(times)  # Shape: (n_times, 10)
+        interp = create_interpolator(mode.value, t0, t1, j0, j1)
+        joints_interp = interp.interpolate(times)  # Shape: (n_times, 22)
 
-        # Convert back to Cartesian for all frames
-        return self._joints_to_poses(joints_interp, pose0)
+        # Convert back to configs
+        configs = []
+        for i in range(len(times)):
+            configs.append(JointStickConfig.from_numpy(joints_interp[i]))
+        
+        return configs
 
-    def _pose_to_joints(self, pose: Dict) -> np.ndarray:
-        """Convert pose to joint parameters using 3D IK.
-
-        Returns: array shape (10,) containing:
-          - 4 hip_yaw angles
-          - 4 hip_pitch angles
-          - 4 hip_roll angles
-          - 4 knee_pitch angles
-          - 6 origin coordinates (shoulder x,y,z, pelvis x,y,z)
-        """
-        limb_lengths = self._get_limb_lengths()
-        scale = 2.0 / (Window.width + Window.height)
-
-        joint_angles = []
-        for cfg, (a1, a2) in zip(LIMB_CONFIGS, limb_lengths):
-            origin = np.array(pose[cfg.origin_key])
-            target = np.array(pose[cfg.target_key])
-
-            solutions = inverse_kinematics_3D_2link(a1 * scale, a2 * scale, origin, target)
-            hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, cfg.name)
-            joint_angles.extend([hip_yaw, hip_pitch, hip_roll, knee_pitch])
-
-        # Append origin positions
-        shoulder = pose["shoulder"]
-        pelvis = pose["pelvis"]
-        return np.array(joint_angles + shoulder + pelvis)
-
-    def _joints_to_poses(self, joints_array: np.ndarray, reference_pose: Dict) -> np.ndarray:
-        """Convert joint parameters to Cartesian poses using 3D FK.
-
-        Args:
-            joints_array: shape (n_times, 22) - joint angles + origins
-            reference_pose: for z-coordinate fallback
-
-        Returns: array shape (n_times, 6, 3)
-        """
-        n_times = joints_array.shape[0]
-        poses = np.zeros((n_times, 6, 3))
-        limb_lengths = self._get_limb_lengths()
-        scale = 2.0 / (Window.width + Window.height)
-
-        for t_idx in range(n_times):
-            joints = joints_array[t_idx]
-
-            # Extract origins
-            shoulder = joints[16:19]
-            pelvis = joints[19:22]
-            poses[t_idx, 0] = shoulder  # shoulder at index 0
-            poses[t_idx, 1] = pelvis  # pelvis at index 1
-
-            # Compute limb endpoints using FK
-            for limb_idx, (cfg, (a1, a2)) in enumerate(zip(LIMB_CONFIGS, limb_lengths)):
-                base_idx = limb_idx * 4
-                hip_yaw = joints[base_idx]
-                hip_pitch = joints[base_idx + 1]
-                hip_roll = joints[base_idx + 2]
-                knee_pitch = joints[base_idx + 3]
-
-                origin = shoulder if cfg.origin_key == "shoulder" else pelvis
-                points = forward_kinematics_3D_2link(
-                    a1 * scale, a2 * scale, origin, hip_yaw, hip_pitch, hip_roll, knee_pitch
-                )
-
-                # Store endpoint (last point from FK)
-                effector_idx = 2 + limb_idx  # hand_left=2, hand_right=3, foot_left=4, foot_right=5
-                poses[t_idx, effector_idx] = points[-1]
-
-        return poses
+    def _cart_to_joint(self, config: CartesianStickConfig) -> JointStickConfig:
+        """Convert Cartesian config to joint config using IK."""
+        from src.kinematics.inverse_kinematics import inverse_kinematics_3D_2link
+        from src.kinematics.forward_kinematics import choose_best_solution_3d
+        
+        limb_configs = []
+        limb_names = ['left_arm', 'right_arm', 'left_leg', 'right_leg']
+        origins = [config.shoulder, config.shoulder, config.pelvis, config.pelvis]
+        targets = [config.hand_left, config.hand_right, config.foot_left, config.foot_right]
+        
+        for limb_name, origin, target in zip(limb_names, origins, targets):
+            a1_ratio, a2_ratio = LIMB_LENGTH_RATIOS[limb_name]
+            
+            solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin, target)
+            hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_name)
+            
+            limb_configs.append(JointLimbConfig(
+                hip_yaw=hip_yaw,
+                hip_pitch=hip_pitch,
+                hip_roll=hip_roll,
+                knee_pitch=knee_pitch
+            ))
+        
+        return JointStickConfig(
+            shoulder=config.shoulder,
+            pelvis=config.pelvis,
+            left_arm=limb_configs[0],
+            right_arm=limb_configs[1],
+            left_leg=limb_configs[2],
+            right_leg=limb_configs[3]
+        )
 
     def _update_displays(self):
         """Update time and frame displays."""
@@ -255,11 +206,15 @@ class AnimationScreen(Screen):
             self.frame_display = "No animation"
 
     def _load_frame(self, frame_idx: int):
-        """Load a specific frame into the pose editor."""
-        if self.frame_poses is None or frame_idx >= len(self.frame_poses):
+        """Load a specific frame into the stick viewer."""
+        if frame_idx >= len(self.frame_configs_cart) or frame_idx >= len(self.frame_configs_joint):
             return
-        pose = self._array_to_pose(self.frame_poses[frame_idx])
-        self.ids["pose_viewer"].load_pose(pose)
+        
+        # Use whichever config is available (Cartesian or Joint)
+        if self.frame_configs_cart[frame_idx] is not None:
+            self.ids["stick_viewer"].load_cart(self.frame_configs_cart[frame_idx])
+        elif self.frame_configs_joint[frame_idx] is not None:
+            self.ids["stick_viewer"].load_joint(self.frame_configs_joint[frame_idx])
 
     def play_pause(self):
         """Toggle play/pause."""
