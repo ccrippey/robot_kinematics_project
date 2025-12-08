@@ -5,7 +5,7 @@ the free editor (Figure2D) and the keyframe editor (KeyframeEditor).
 """
 
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.properties import NumericProperty, DictProperty
+from kivy.properties import NumericProperty
 from kivy.clock import Clock
 from kivy.core.window import Window
 import numpy as np

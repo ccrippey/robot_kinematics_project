@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from src.kinematics.projection2d import project_point
-from src.kinematics.forward_kinematics import rot3y
+from src.kinematics.forward_kinematics import rot3y, rot3x, rot3z
 
 
 # Input: a1, a2 - link lengths; x_base, y_base - location of 2link base; x_end, y_end - location of target position
@@ -30,24 +30,41 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
 
     return solution
 
+def inverse_kinematics_3D_2link(a1, a2, base3, end3, limb_id):
+    
+    if (limb_id == "left_arm" or limb_id == "right_arm"):
+        Px = end3[0] - base3[0]
+        Pz = end3[2] - base3[2]
 
-def inverse_kinematics_3D_2link(a1, a2, base3, end3):
-    Px = end3[0] - base3[0]
-    Pz = end3[2] - base3[2]
+        solutions = []
+        yaw = math.atan2(Pz, Px)
+        yaw_planes = [yaw, yaw + math.pi]
+        for yaw_plane in yaw_planes:
+            hip_yaw = -yaw_plane
+            end3_shifted = np.array(end3) - np.array(base3)
+            end3_shifted_projected = rot3y(yaw_plane) @ end3_shifted.T
+            hip_roll = 0
+            for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(
+                a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]
+            ):
+                solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
+    else: #Actually Leg This shit don't work
+        Px = end3[0] - base3[0] 
+        Py = end3[1] - base3[1]
 
-    solutions = []
-    yaw = math.atan2(Pz, Px)
-    yaw_planes = [yaw, yaw + math.pi]
-    for yaw_plane in yaw_planes:
-        hip_yaw = -yaw_plane
-        end3_shifted = np.array(end3) - np.array(base3)
-        end3_shifted_projected = rot3y(yaw_plane) @ end3_shifted.T
-        hip_roll = 0
-        for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(
-            a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]
-        ):
-            solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
-
+        solutions = []
+        roll = math.atan2(Py, Px)
+        roll_planes = [roll, roll + math.pi]
+        for roll_plane in roll_planes:
+            hip_roll = -roll_plane
+            end3_shifted = np.array(end3) - np.array(base3)
+            end3_shifted_projected = rot3z(roll_plane) @ end3_shifted.T
+            hip_yaw = math.pi/2.0
+            for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(
+                a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]
+            ):
+                solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
+        pass
     return solutions
 
 

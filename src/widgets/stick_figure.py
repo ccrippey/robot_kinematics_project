@@ -8,7 +8,7 @@ from src.kinematics.inverse_kinematics import cart_to_joint_config
 from src.kinematics.forward_kinematics import forward_kinematics_3D_2link
 from src.kinematics import projection2d
 from src.kinematics.projection2d import project_points
-from src.kinematics.stick_config import CartesianStickConfig, JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
+from src.kinematics.stick_config import CartesianStickConfig, JointStickConfig, LIMB_LENGTH_RATIOS
 
 
 class StickFigure(Widget):
