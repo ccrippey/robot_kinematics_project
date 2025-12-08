@@ -41,14 +41,14 @@ class KeyframeEditor(Screen):
     def _post_init(self, dt):
         """Initialize after widget tree is built."""
         # Sync projection mode with pose editors
-        for pose_id in ["current_pose", "ghost_pose"]:
-            pose_editor = self.ids[pose_id]
-            pose_editor.projection_mode = self.projection_mode
-            self.bind(projection_mode=lambda inst, val, p=pose_editor: setattr(p, "projection_mode", val))
+        # for pose_id in ["current_pose", "ghost_pose"]:
+        #     pose_editor = self.ids[pose_id]
+        #     pose_editor.projection_mode = self.projection_mode
+        #     self.bind(projection_mode=lambda inst, val, p=pose_editor: setattr(p, "projection_mode", val))
 
         # Configure ghost pose (non-draggable, gray appearance)
         ghost_pose = self.ids["ghost_pose"]
-        for eff_id in sum(ghost_pose.EFFECTOR_IDS.values(), []):
+        for eff_id in ghost_pose.EFFECTOR_IDS:
             eff = ghost_pose.ids[eff_id]
             eff.draggable = False
             eff.color = (0.6, 0.6, 0.6, 0.6)

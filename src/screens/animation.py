@@ -8,11 +8,8 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 
 from ..kinematics.interpolation import create_interpolator, InterpolationMode, InterpolationSpace
-from ..kinematics.inverse_kinematics import inverse_kinematics_3D_2link, choose_best_solution_3d
-from ..kinematics.forward_kinematics import forward_kinematics_3D_2link
-from ..kinematics.stick_config import (
-    CartesianStickConfig, JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
-)
+from ..kinematics.inverse_kinematics import cart_to_joint_config
+from ..kinematics.stick_config import CartesianStickConfig, JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
 
 
 class AnimationScreen(Screen):
@@ -62,8 +59,6 @@ class AnimationScreen(Screen):
         """Stop playback when leaving screen."""
         self.pause_playback()
 
-
-
     def _precompute_animation(self):
         """Precompute all animation frames at target FPS using vectorized operations."""
         self.total_duration = self.keyframe_times[-1]
@@ -78,7 +73,7 @@ class AnimationScreen(Screen):
         # Precompute configs for all frames by segment
         self.frame_configs_cart = []
         self.frame_configs_joint = []
-        
+
         for seg_idx in range(len(self.keyframes) - 1):
             t0, t1 = self.keyframe_times[seg_idx], self.keyframe_times[seg_idx + 1]
             interp_settings = self.keyframe_interps[seg_idx + 1]
@@ -115,8 +110,13 @@ class AnimationScreen(Screen):
                     self.frame_configs_joint.pop(-len(segment_times))
 
     def _interpolate_cartesian_segment(
-        self, config0: CartesianStickConfig, config1: CartesianStickConfig, 
-        t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
+        self,
+        config0: CartesianStickConfig,
+        config1: CartesianStickConfig,
+        t0: float,
+        t1: float,
+        times: np.ndarray,
+        mode: InterpolationMode,
     ) -> List[CartesianStickConfig]:
         """Interpolate Cartesian positions for all frames in segment.
 
@@ -135,20 +135,25 @@ class AnimationScreen(Screen):
         for i in range(len(times)):
             pose_array = result_flat[i].reshape(6, 3)
             configs.append(CartesianStickConfig.from_numpy(pose_array))
-        
+
         return configs
 
     def _interpolate_joint_segment(
-        self, config0: CartesianStickConfig, config1: CartesianStickConfig,
-        t0: float, t1: float, times: np.ndarray, mode: InterpolationMode
+        self,
+        config0: CartesianStickConfig,
+        config1: CartesianStickConfig,
+        t0: float,
+        t1: float,
+        times: np.ndarray,
+        mode: InterpolationMode,
     ) -> List[JointStickConfig]:
         """Interpolate in joint space for all frames in segment.
 
         Returns: list of JointStickConfig objects
         """
         # Convert both configs to joint space
-        joint0 = self._cart_to_joint(config0)
-        joint1 = self._cart_to_joint(config1)
+        joint0 = cart_to_joint_config(config0)
+        joint1 = cart_to_joint_config(config1)
 
         # Convert to numpy for interpolation
         j0 = joint0.to_numpy()  # Shape: (22,)
@@ -162,40 +167,8 @@ class AnimationScreen(Screen):
         configs = []
         for i in range(len(times)):
             configs.append(JointStickConfig.from_numpy(joints_interp[i]))
-        
-        return configs
 
-    def _cart_to_joint(self, config: CartesianStickConfig) -> JointStickConfig:
-        """Convert Cartesian config to joint config using IK."""
-        from src.kinematics.inverse_kinematics import inverse_kinematics_3D_2link
-        from src.kinematics.forward_kinematics import choose_best_solution_3d
-        
-        limb_configs = []
-        limb_names = ['left_arm', 'right_arm', 'left_leg', 'right_leg']
-        origins = [config.shoulder, config.shoulder, config.pelvis, config.pelvis]
-        targets = [config.hand_left, config.hand_right, config.foot_left, config.foot_right]
-        
-        for limb_name, origin, target in zip(limb_names, origins, targets):
-            a1_ratio, a2_ratio = LIMB_LENGTH_RATIOS[limb_name]
-            
-            solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin, target)
-            hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_name)
-            
-            limb_configs.append(JointLimbConfig(
-                hip_yaw=hip_yaw,
-                hip_pitch=hip_pitch,
-                hip_roll=hip_roll,
-                knee_pitch=knee_pitch
-            ))
-        
-        return JointStickConfig(
-            shoulder=config.shoulder,
-            pelvis=config.pelvis,
-            left_arm=limb_configs[0],
-            right_arm=limb_configs[1],
-            left_leg=limb_configs[2],
-            right_leg=limb_configs[3]
-        )
+        return configs
 
     def _update_displays(self):
         """Update time and frame displays."""
@@ -209,7 +182,7 @@ class AnimationScreen(Screen):
         """Load a specific frame into the stick viewer."""
         if frame_idx >= len(self.frame_configs_cart) or frame_idx >= len(self.frame_configs_joint):
             return
-        
+
         # Use whichever config is available (Cartesian or Joint)
         if self.frame_configs_cart[frame_idx] is not None:
             self.ids["stick_viewer"].load_cart(self.frame_configs_cart[frame_idx])

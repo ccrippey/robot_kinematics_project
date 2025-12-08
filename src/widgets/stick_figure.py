@@ -4,7 +4,7 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 import numpy as np
 
-from src.kinematics.inverse_kinematics import inverse_kinematics_3D_2link, choose_best_solution_3d
+from src.kinematics.inverse_kinematics import cart_to_joint_config
 from src.kinematics.forward_kinematics import forward_kinematics_3D_2link
 from src.kinematics import projection2d
 from src.kinematics.projection2d import project_points
@@ -56,7 +56,7 @@ class StickFigure(Widget):
         Performs IK to compute joint angles, then calls load_joint.
         """
         # Convert Cartesian to Joint space via IK
-        joint_config = self._cart_to_joint(config)
+        joint_config = cart_to_joint_config(config)
         self.load_joint(joint_config)
 
     def load_joint(self, config: JointStickConfig):
@@ -66,8 +66,6 @@ class StickFigure(Widget):
         """
 
         # Convert normalized positions to pixels
-        # shoulder_px = config.shoulder * screen_size
-        # pelvis_px = config.pelvis * screen_size
         shoulder_pos = config.shoulder
         pelvis_pos = config.pelvis
 
@@ -108,34 +106,6 @@ class StickFigure(Widget):
 
         self.shoulder_pos2d = [shoulder_2d[0], shoulder_2d[1]]
         self.pelvis_pos2d = [pelvis_2d[0], pelvis_2d[1]]
-
-    def _cart_to_joint(self, config: CartesianStickConfig) -> JointStickConfig:
-        """Convert Cartesian config to Joint config via IK."""
-        # Convert normalized to pixels for IK
-        shoulder_pos = config.shoulder
-        pelvis_pos = config.pelvis
-        hand_left_pos = config.hand_left
-        hand_right_pos = config.hand_right
-        foot_left_pos = config.foot_left
-        foot_right_pos = config.foot_right
-
-        # IK for each limb
-        limb_ik = [
-            ("left_arm", shoulder_pos, hand_left_pos),
-            ("right_arm", shoulder_pos, hand_right_pos),
-            ("left_leg", pelvis_pos, foot_left_pos),
-            ("right_leg", pelvis_pos, foot_right_pos),
-        ]
-
-        joint_limbs = {}
-        for limb_name, origin_pos, target_pos in limb_ik:
-            a1_ratio, a2_ratio = LIMB_LENGTH_RATIOS[limb_name]
-
-            solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin_pos, target_pos)
-            hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_name)
-            joint_limbs[limb_name] = JointLimbConfig(hip_yaw, hip_pitch, hip_roll, knee_pitch)
-
-        return JointStickConfig(shoulder=config.shoulder, pelvis=config.pelvis, **joint_limbs)
 
     def on_projection_mode(self, *args):
         """Update head image based on projection mode."""

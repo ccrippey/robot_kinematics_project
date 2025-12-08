@@ -26,24 +26,18 @@ class PoseEditor(RelativeLayout):
     projection_mode = NumericProperty(0.0)
 
     # Effector IDs we expect to find in the widget tree
-    EFFECTOR_IDS = {
-        "hands": ["hand_left", "hand_right"],
-        "feet": ["foot_left", "foot_right"],
-        "joints": ["shoulder", "pelvis"],
-    }
+    EFFECTOR_IDS = ["hand_left", "hand_right", "foot_left", "foot_right", "shoulder", "pelvis"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
+        Window.bind(size=self.update_stick_config)
         Clock.schedule_once(self._post_init, 0)
 
     def _post_init(self, dt):
-        """Initialize after widget tree is built."""
-        # Bind all effectors to update handler
-        all_effectors = sum(self.EFFECTOR_IDS.values(), [])
-        for eff_id in all_effectors:
+        for eff_id in self.EFFECTOR_IDS:
             eff = self.ids[eff_id]
             eff.bind(pos3d=self.update_stick_config)
+        self.update_stick_config()
 
     def update_stick_config(self, *args):
         """Handle effector movement - update stick figure via load_cart."""
@@ -54,8 +48,8 @@ class PoseEditor(RelativeLayout):
     def on_projection_mode(self, instance, value):
         """Handle projection mode changes."""
         self.projection_mode = value
-        self.update_stick_config()
-
+        # Schedule a position refresh after projection_mode has propagated
+        Clock.schedule_once(lambda dt: self.update_stick_config(), 0)
 
     def capture_pose(self):
         """Capture current pose as CartesianStickConfig (normalized coords)."""
@@ -87,4 +81,3 @@ class PoseEditor(RelativeLayout):
 
         # Update stick figure
         self.ids["stick_figure"].load_cart(config)
-

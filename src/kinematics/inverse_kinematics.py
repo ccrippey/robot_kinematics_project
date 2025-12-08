@@ -54,3 +54,39 @@ def choose_best_solution_3d(solutions, limb_id):
         if (limb_id == "left_leg" or limb_id == "right_leg") and soln[1] > best_soln[1]: #Find biggest hip pitch
             best_soln = soln
     return best_soln
+
+
+def cart_to_joint_config(cart_config):
+    """Convert CartesianStickConfig to JointStickConfig using IK.
+    
+    Args:
+        cart_config: CartesianStickConfig with normalized 3D positions
+        
+    Returns:
+        JointStickConfig with joint angles and origin positions
+    """
+    from src.kinematics.stick_config import JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
+    
+    limb_configs = []
+    limb_names = ["left_arm", "right_arm", "left_leg", "right_leg"]
+    origins = [cart_config.shoulder, cart_config.shoulder, cart_config.pelvis, cart_config.pelvis]
+    targets = [cart_config.hand_left, cart_config.hand_right, cart_config.foot_left, cart_config.foot_right]
+    
+    for limb_name, origin, target in zip(limb_names, origins, targets):
+        a1_ratio, a2_ratio = LIMB_LENGTH_RATIOS[limb_name]
+        
+        solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin, target)
+        hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_name)
+        
+        limb_configs.append(
+            JointLimbConfig(hip_yaw=hip_yaw, hip_pitch=hip_pitch, hip_roll=hip_roll, knee_pitch=knee_pitch)
+        )
+    
+    return JointStickConfig(
+        shoulder=cart_config.shoulder,
+        pelvis=cart_config.pelvis,
+        left_arm=limb_configs[0],
+        right_arm=limb_configs[1],
+        left_leg=limb_configs[2],
+        right_leg=limb_configs[3],
+    )
