@@ -1,9 +1,10 @@
 import math
 import numpy as np
 from src.kinematics.projection2d import project_point
-from src.kinematics.forward_kinematics import rot3y, rot3x, rot3z
+from src.kinematics.forward_kinematics import rot3y, rot3x, rot3z, forward_kinematics_3D_2link
 from src.kinematics.stick_config import JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
-
+from scipy.optimize import NonlinearConstraint, BFGS, minimize
+from functools import partial
 
 # Input: a1, a2 - link lengths; x_base, y_base - location of 2link base; x_end, y_end - location of target position
 # Output: theta1, theta2 - 2link angles
@@ -32,7 +33,7 @@ def inverse_kinematics_2D_2link(a1, a2, x_base, y_base, x_end, y_end):
     return solution
 
 
-def inverse_kinematics_3D_2link(a1, a2, base3, end3, limb_id):
+def inverse_kinematics_3D_2link(a1, a2, base3, end3, limb_id, prev_angs_thislimb):
 
     if limb_id == "left_arm" or limb_id == "right_arm":
         Px = end3[0] - base3[0]
@@ -51,21 +52,33 @@ def inverse_kinematics_3D_2link(a1, a2, base3, end3, limb_id):
             ):
                 solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
     else:  # Actually Leg This shit don't work
-        Px = end3[0] - base3[0]
-        Py = end3[1] - base3[1]
+        
+        #x =  hip_yaw, hip_pitch, hip_roll, knee_pitch
 
+        x0 = prev_angs_thislimb.to_numpy()  #I hope your code works lucas
+        #result = minimize(obj_f_bound, x0=x0,method='trust-constr', constraints=[fk_nonlinear],hess=None)
+        def residual_obj(x, limb):
+            pos = forward_kinematics_3D_2link(a1,a2,base3,
+                                      x[0],x[1],x[2],x[3])
+            ik_err = np.sum((pos[2] - end3)**2)
+            lam = 2.0                              # tune this
+            if limb == "right_leg":
+                penalty = lam * ( x[0] - math.pi/2)**2
+            elif limb == "left_leg":
+                penalty = lam * ( x[0] + math.pi/2)**2
+            else:
+                print("what are you doing")
+                return None
+            return penalty + ik_err
+        
+        result = minimize(residual_obj, x0, method='BFGS',args=(limb_id))
+        
         solutions = []
-        roll = math.atan2(Py, Px)
-        roll_planes = [roll, roll + math.pi]
-        for roll_plane in roll_planes:
-            hip_roll = -roll_plane
-            end3_shifted = np.array(end3) - np.array(base3)
-            end3_shifted_projected = rot3z(roll_plane) @ end3_shifted.T
-            hip_yaw = math.pi / 2.0
-            for hip_pitch, knee_pitch in inverse_kinematics_2D_2link(
-                a1, a2, 0, 0, end3_shifted_projected[0], end3_shifted_projected[1]
-            ):
-                solutions.append((hip_yaw, hip_pitch, hip_roll, knee_pitch))
+        solutions.append(tuple(result.x))
+        if not result.success:
+            print("IK failed:", result.message)
+            quit()  # or break/raise/etc.
+  
         pass
     return solutions
 
@@ -78,7 +91,7 @@ def choose_best_solution_3d(solutions, limb_id):
     return best_soln
 
 
-prev_cart = None
+prev_angs = None
 
 
 def cart_to_joint_config(cart_config):
@@ -90,23 +103,32 @@ def cart_to_joint_config(cart_config):
     Returns:
         JointStickConfig with joint angles and origin positions
     """
-    global prev_cart
+    global prev_angs
+
+    if prev_angs == None:
+        prev_angs = []
+        prev_angs.append(JointLimbConfig(hip_yaw=0, hip_pitch=0, hip_roll=0, knee_pitch=0))
+        prev_angs.append(JointLimbConfig(hip_yaw=0, hip_pitch=0, hip_roll=0, knee_pitch=0))
+        prev_angs.append(JointLimbConfig(hip_yaw=0, hip_pitch=0, hip_roll=0, knee_pitch=0))
+        prev_angs.append(JointLimbConfig(hip_yaw=0, hip_pitch=0, hip_roll=0, knee_pitch=0)) #not optimal
+
     limb_configs = []
     limb_names = ["left_arm", "right_arm", "left_leg", "right_leg"]
     origins = [cart_config.shoulder, cart_config.shoulder, cart_config.pelvis, cart_config.pelvis]
     targets = [cart_config.hand_left, cart_config.hand_right, cart_config.foot_left, cart_config.foot_right]
 
-    for limb_name, origin, target in zip(limb_names, origins, targets):
+    for limb_name, origin, target, prev_angs_thislimb in zip(limb_names, origins, targets, prev_angs):
         a1_ratio, a2_ratio = LIMB_LENGTH_RATIOS[limb_name]
 
-        solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin, target, limb_name)
+        solutions = inverse_kinematics_3D_2link(a1_ratio, a2_ratio, origin, target, limb_name, prev_angs_thislimb)
         hip_yaw, hip_pitch, hip_roll, knee_pitch = choose_best_solution_3d(solutions, limb_name)
 
         limb_configs.append(
             JointLimbConfig(hip_yaw=hip_yaw, hip_pitch=hip_pitch, hip_roll=hip_roll, knee_pitch=knee_pitch)
         )
 
-    prev_cart = cart_config
+    prev_angs = limb_configs
+
     return JointStickConfig(
         shoulder=cart_config.shoulder,
         pelvis=cart_config.pelvis,
