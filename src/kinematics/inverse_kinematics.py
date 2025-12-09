@@ -2,6 +2,7 @@ import math
 import numpy as np
 from src.kinematics.projection2d import project_point
 from src.kinematics.forward_kinematics import rot3y, rot3x, rot3z
+from src.kinematics.stick_config import JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
 
 
 # Input: a1, a2 - link lengths; x_base, y_base - location of 2link base; x_end, y_end - location of target position
@@ -77,6 +78,9 @@ def choose_best_solution_3d(solutions, limb_id):
     return best_soln
 
 
+prev_cart = None
+
+
 def cart_to_joint_config(cart_config):
     """Convert CartesianStickConfig to JointStickConfig using IK.
 
@@ -86,8 +90,7 @@ def cart_to_joint_config(cart_config):
     Returns:
         JointStickConfig with joint angles and origin positions
     """
-    from src.kinematics.stick_config import JointStickConfig, JointLimbConfig, LIMB_LENGTH_RATIOS
-
+    global prev_cart
     limb_configs = []
     limb_names = ["left_arm", "right_arm", "left_leg", "right_leg"]
     origins = [cart_config.shoulder, cart_config.shoulder, cart_config.pelvis, cart_config.pelvis]
@@ -103,6 +106,7 @@ def cart_to_joint_config(cart_config):
             JointLimbConfig(hip_yaw=hip_yaw, hip_pitch=hip_pitch, hip_roll=hip_roll, knee_pitch=knee_pitch)
         )
 
+    prev_cart = cart_config
     return JointStickConfig(
         shoulder=cart_config.shoulder,
         pelvis=cart_config.pelvis,
